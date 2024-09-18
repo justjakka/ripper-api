@@ -13,7 +13,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func serve(cCtx *cli.Context) error {
+func Run(cCtx *cli.Context) error {
 	serverConfig, err := initConfig(cCtx)
 
 	if err != nil {
@@ -62,35 +62,33 @@ func Start() {
 		Name:        "ripper-api",
 		Usage:       "Web server for amusic ripping",
 		Description: "Web server with alac ripping, coverting and removing padding. Works with frida server and amusic wrapper",
-		Commands: []*cli.Command{
-			{
-				Name:   "serve",
-				Usage:  "Run the HTTP server",
-				Action: serve,
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:    "bind-addr",
-						Usage:   "Server listen address",
-						Value:   "127.0.0.1:8100",
-						EnvVars: []string{"BIND_ADDR"},
-					},
-					&cli.StringFlag{
-						Name:    "web-dir",
-						Usage:   "Temporary directory for content serving",
-						EnvVars: []string{"WEB_DIR"},
-					},
-					&cli.StringFlag{
-						Name:    "bind-wrapper",
-						Usage:   "Address and port wrapper listens on",
-						EnvVars: []string{"BIND_ADDR_WRAPPER"},
-					},
-					&cli.StringFlag{
-						Name:    "key-db",
-						Usage:   "File with valid api keys",
-						Value:   "./keys",
-						EnvVars: []string{"KEY_DB"},
-					},
-				},
+		UsageText:   "ripper-api [flags]",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "bind-addr",
+				Usage:   "Server listen address",
+				Value:   "127.0.0.1:8100",
+				EnvVars: []string{"BIND_ADDR"},
+				Aliases: []string{"b"},
+			},
+			&cli.StringFlag{
+				Name:    "web-dir",
+				Usage:   "Temporary directory for content serving",
+				EnvVars: []string{"WEB_DIR"},
+				Aliases: []string{"d"},
+			},
+			&cli.StringFlag{
+				Name:    "bind-wrapper",
+				Usage:   "Address and port wrapper listens on",
+				EnvVars: []string{"BIND_ADDR_WRAPPER"},
+				Aliases: []string{"w"},
+			},
+			&cli.StringFlag{
+				Name:    "key-db",
+				Usage:   "File with valid api keys",
+				Value:   "./keys",
+				EnvVars: []string{"KEY_DB"},
+				Aliases: []string{"k"},
 			},
 		},
 	}
