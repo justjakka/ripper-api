@@ -74,9 +74,9 @@ func CreateEchoWithServer(ctx context.Context, config *ServerConfig) (*echo.Echo
 
 	listenAddr := fmt.Sprintf("redis:%d", config.PortRedis)
 	rdb := redis.NewClient(&redis.Options{
-		Addr: listenAddr,
-		/* Password: config.RedisPw, */
-		DB: 0,
+		Addr:     listenAddr,
+		Password: config.RedisPw,
+		DB:       0,
 	})
 
 	e := createEcho(config, logger.With().Logger(), rdb)
