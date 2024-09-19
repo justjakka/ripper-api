@@ -20,7 +20,7 @@ func ProcessLink(c echo.Context) error {
 }
 
 func ProcessRequestID(c echo.Context) error {
-	requrl := c.Param("urlhex")
+	requrl := c.Param("reqid")
 	fmt.Println("reached", requrl)
 	test := &Test{Url: requrl, Str: "test"}
 	return c.JSON(http.StatusOK, test)

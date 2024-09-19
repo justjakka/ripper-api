@@ -6,3 +6,8 @@ type ServerConfig struct {
 	BindWrapper string
 	KeyList     *[]string
 }
+
+type Job struct {
+	status  int
+	message string
+}

@@ -47,6 +47,8 @@ func createEcho(config *ServerConfig, logger zerolog.Logger) *echo.Echo {
 	e.POST("/:urlhex", ProcessLink)
 	e.GET("/requestid/:reqid", ProcessRequestID)
 
+	/* var JobQueue = make(map[string]Job) */
+
 	return e
 }
 
