@@ -19,8 +19,9 @@ func QueryRedis(RequestId string, c echo.Context) (Job, error) {
 
 	ctx := context.Background()
 	cc := c.(*ConfigContext)
+	listenAddr := fmt.Sprintf(":%d", cc.ServerConfig.PortRedis)
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     cc.ServerConfig.BindRedis,
+		Addr:     listenAddr,
 		Password: cc.ServerConfig.RedisPw,
 		DB:       0, // use default DB
 	})
@@ -50,9 +51,10 @@ func Unmarshal(val string) {
 
 func ProcessLink(c echo.Context) error {
 	cc := c.(*ConfigContext)
-	port := cc.ServerConfig.BindRedis
+	port := cc.ServerConfig.PortRedis
+	listenPort := fmt.Sprintf(":%d", port)
 	requrl := c.Param("urlhex")
-	test := &Test{Url: requrl, Str: port}
+	test := &Test{Url: requrl, Str: listenPort}
 	return c.JSON(http.StatusOK, test)
 }
 

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 
@@ -64,9 +65,10 @@ func CreateEchoWithServer(ctx context.Context, config *ServerConfig) (*echo.Echo
 	logger := zerolog.Ctx(ctx)
 
 	e := createEcho(config, logger.With().Logger())
+	listenAddr := fmt.Sprintf(":%d", config.Port)
 
 	srv := &http.Server{
-		Addr:        config.BindAddr,
+		Addr:        listenAddr,
 		Handler:     e,
 		BaseContext: func(l net.Listener) context.Context { return ctx },
 	}

@@ -3,10 +3,10 @@ package server
 import "github.com/labstack/echo/v4"
 
 type ServerConfig struct {
-	BindAddr    string
+	Port        uint
+	PortRedis   uint
+	PortWrapper uint
 	WebDir      string
-	BindWrapper string
-	BindRedis   string
 	RedisPw     string
 	KeyList     *[]string
 }

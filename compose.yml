@@ -1,0 +1,24 @@
+services:
+  ripper-api:
+    build: .
+    ports:
+      - "127.0.0.1:8080:80"
+    environment:
+      PORT: ${API_PORT}
+      WEB_DIR: ${WEB_DIR}
+      WRAPPER_PORT: ${WRAPPER_PORT}
+      KEY_DB: ${KEY_DB}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - /tmp/redis:/root/redis
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_DATABASES: 1

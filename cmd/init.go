@@ -33,10 +33,10 @@ func initConfig(cCtx *cli.Context) (*server.ServerConfig, error) {
 	}
 
 	return &server.ServerConfig{
-			BindAddr:    cCtx.String("bind-addr"),
+			Port:        cCtx.Uint("port"),
+			PortRedis:   cCtx.Uint("port-redis"),
+			PortWrapper: cCtx.Uint("port-wrapper"),
 			WebDir:      cCtx.String("web-dir"),
-			BindWrapper: cCtx.String("bind-wrapper"),
-			BindRedis:   cCtx.String("bind-redis"),
 			RedisPw:     cCtx.String("redis-pw"),
 			KeyList:     &lines},
 		nil

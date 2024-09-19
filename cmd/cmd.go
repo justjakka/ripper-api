@@ -69,12 +69,12 @@ func Start() {
 				Usage:  "Run the HTTP server",
 				Action: serve,
 				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:    "bind-addr",
-						Usage:   "Server listen address",
-						Value:   "127.0.0.1:8100",
-						EnvVars: []string{"BIND_ADDR"},
-						Aliases: []string{"b"},
+					&cli.UintFlag{
+						Name:    "port",
+						Usage:   "Port to bind the HTTP listener to",
+						Value:   uint(8080),
+						EnvVars: []string{"PORT"},
+						Aliases: []string{"p"},
 					},
 					&cli.StringFlag{
 						Name:    "web-dir",
@@ -83,9 +83,9 @@ func Start() {
 						Aliases: []string{"d"},
 					},
 					&cli.StringFlag{
-						Name:    "bind-wrapper",
-						Usage:   "Address and port wrapper listens on",
-						EnvVars: []string{"BIND_ADDR_WRAPPER"},
+						Name:    "port-wrapper",
+						Usage:   "Port wrapper listens on",
+						EnvVars: []string{"WRAPPER_PORT"},
 						Aliases: []string{"w"},
 					},
 					&cli.StringFlag{
@@ -96,16 +96,16 @@ func Start() {
 						Aliases: []string{"k"},
 					},
 					&cli.StringFlag{
-						Name:    "bind-redis",
-						Usage:   "Address and port redis listens on",
-						EnvVars: []string{"BIND_ADDR_REDIS"},
+						Name:    "port-redis",
+						Usage:   "Port redis listens on",
+						EnvVars: []string{"REDIS_PORT"},
 						Aliases: []string{"r"},
 					},
 					&cli.StringFlag{
 						Name:    "redis-pw",
 						Usage:   "Redis password",
 						EnvVars: []string{"REDIS_PASSWORD"},
-						Aliases: []string{"rpw"},
+						Aliases: []string{"pw"},
 					},
 				},
 			},

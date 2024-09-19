@@ -6,6 +6,7 @@ require (
 	github.com/abema/go-mp4 v1.2.0
 	github.com/grafov/m3u8 v0.12.0
 	github.com/labstack/echo/v4 v4.12.0
+	github.com/redis/go-redis/v9 v9.6.1
 	github.com/rs/zerolog v1.33.0
 	github.com/urfave/cli/v2 v2.27.4
 )
@@ -19,8 +20,6 @@ require (
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/nitishm/go-rejson/v4 v4.2.0 // indirect
-	github.com/redis/go-redis/v9 v9.6.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
