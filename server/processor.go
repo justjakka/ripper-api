@@ -13,14 +13,14 @@ type Test struct {
 }
 
 func ProcessLink(c echo.Context) error {
-	requrl := c.Param("url")
+	requrl := c.Param("urlhex")
 	fmt.Println("reached", requrl)
-	test := &Test{Url: requrl, Str: "test"}
+	test := &Test{Url: requrl, Str: c.Response().Header().Get(echo.HeaderXRequestID)}
 	return c.JSON(http.StatusOK, test)
 }
 
 func ProcessRequestID(c echo.Context) error {
-	requrl := c.Param("url")
+	requrl := c.Param("urlhex")
 	fmt.Println("reached", requrl)
 	test := &Test{Url: requrl, Str: "test"}
 	return c.JSON(http.StatusOK, test)

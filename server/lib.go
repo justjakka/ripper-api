@@ -15,10 +15,12 @@ func createEcho(config *ServerConfig, logger zerolog.Logger) *echo.Echo {
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogURI:    true,
 		LogStatus: true,
+		LogMethod: true,
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 			logger.Info().
 				Str("URI", v.URI).
 				Int("status", v.Status).
+				Str("method", v.Method).
 				Msg("request")
 
 			return nil
@@ -42,10 +44,8 @@ func createEcho(config *ServerConfig, logger zerolog.Logger) *echo.Echo {
 		},
 	}))
 
-	api := e.Group("/")
-
-	api.POST("/:url", ProcessLink)
-	api.GET("/requestid/:reqid", ProcessRequestID)
+	e.POST("/:urlhex", ProcessLink)
+	e.GET("/requestid/:reqid", ProcessRequestID)
 
 	return e
 }
