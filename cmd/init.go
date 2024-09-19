@@ -36,6 +36,8 @@ func initConfig(cCtx *cli.Context) (*server.ServerConfig, error) {
 			BindAddr:    cCtx.String("bind-addr"),
 			WebDir:      cCtx.String("web-dir"),
 			BindWrapper: cCtx.String("bind-wrapper"),
+			BindRedis:   cCtx.String("bind-redis"),
+			RedisPw:     cCtx.String("redis-pw"),
 			KeyList:     &lines},
 		nil
 }

@@ -95,6 +95,18 @@ func Start() {
 						EnvVars: []string{"KEY_DB"},
 						Aliases: []string{"k"},
 					},
+					&cli.StringFlag{
+						Name:    "bind-redis",
+						Usage:   "Address and port redis listens on",
+						EnvVars: []string{"BIND_ADDR_REDIS"},
+						Aliases: []string{"r"},
+					},
+					&cli.StringFlag{
+						Name:    "redis-pw",
+						Usage:   "Redis password",
+						EnvVars: []string{"REDIS_PASSWORD"},
+						Aliases: []string{"rpw"},
+					},
 				},
 			},
 		},

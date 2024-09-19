@@ -12,6 +12,14 @@ import (
 
 func createEcho(config *ServerConfig, logger zerolog.Logger) *echo.Echo {
 	e := echo.New()
+
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			cc := &ConfigContext{c, config}
+			return next(cc)
+		}
+	})
+
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogURI:    true,
 		LogStatus: true,
