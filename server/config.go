@@ -1,6 +1,9 @@
 package server
 
-import "github.com/labstack/echo/v4"
+import (
+	"github.com/labstack/echo/v4"
+	"github.com/redis/go-redis/v9"
+)
 
 type ServerConfig struct {
 	Port        uint
@@ -14,9 +17,10 @@ type ServerConfig struct {
 type ConfigContext struct {
 	echo.Context
 	*ServerConfig
+	*redis.Client
 }
 
 type Job struct {
-	Status  string `json:"status"`
+	Status  uint8  `json:"status"` // 0 - done; 1 - in process; 2 - error
 	Message string `json:"message"`
 }

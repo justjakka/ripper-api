@@ -5,26 +5,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
 )
 
 type Test struct {
-	Url string `json:"url" xml:"url"`
-	Str string `json:"str" xml:"str"`
+	Str1 string `json:"str1"`
+	Str2 string `json:"str2"`
 }
 
-func QueryRedis(RequestId string, c echo.Context) (Job, error) {
+func QueryRedis(c echo.Context, RequestId string) (Job, error) {
 
 	ctx := context.Background()
 	cc := c.(*ConfigContext)
-	listenAddr := fmt.Sprintf(":%d", cc.ServerConfig.PortRedis)
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     listenAddr,
-		Password: cc.ServerConfig.RedisPw,
-		DB:       0, // use default DB
-	})
+	rdb := cc.Client
 
 	val, err := rdb.Get(ctx, RequestId).Bytes()
 
@@ -42,25 +38,54 @@ func QueryRedis(RequestId string, c echo.Context) (Job, error) {
 	}
 
 	return response, nil
-
 }
 
-func Unmarshal(val string) {
-	panic("unimplemented")
+func RedisSet(c echo.Context, RequestId string, job *Job) error {
+	ctx := context.Background()
+	cc := c.(*ConfigContext)
+
+	rdb := cc.Client
+
+	p, err := json.Marshal(job)
+
+	if err != nil {
+		return err
+	}
+
+	err = rdb.Set(ctx, RequestId, p, time.Hour).Err()
+
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func ProcessLink(c echo.Context) error {
-	cc := c.(*ConfigContext)
-	port := cc.ServerConfig.PortRedis
-	listenPort := fmt.Sprintf(":%d", port)
-	requrl := c.Param("urlhex")
-	test := &Test{Url: requrl, Str: listenPort}
+
+	newJob := Job{Status: 0, Message: "Job created"}
+	err := RedisSet(c, c.Response().Header().Get(echo.HeaderXRequestID), &newJob)
+
+	if err != nil {
+		return err
+	}
+
+	test := &Test{Str1: c.Response().Header().Get(echo.HeaderXRequestID), Str2: "is ok"}
 	return c.JSON(http.StatusOK, test)
 }
 
 func ProcessRequestID(c echo.Context) error {
-	requrl := c.Param("reqid")
-	fmt.Println("reached", requrl)
-	test := &Test{Url: requrl, Str: "test"}
-	return c.JSON(http.StatusOK, test)
+	job, err := QueryRedis(c, c.Param("reqid"))
+
+	if err != nil {
+		return err
+	}
+
+	if job.Message == "" {
+		return c.JSON(http.StatusBadRequest, "")
+	} else {
+		status := fmt.Sprintf("%d", job.Status)
+		test := &Test{Str1: status, Str2: job.Message}
+		return c.JSON(http.StatusOK, test)
+	}
+
 }
