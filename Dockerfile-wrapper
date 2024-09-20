@@ -6,10 +6,11 @@ RUN set -x && \
     apt-get update && \
     apt-get install -y git wget unzip make clang && \
     mkdir /src
-RUN wget -O /src/ndk.zip 'https://dl.google.com/android/repository/android-ndk-r23b-linux.zip'
+RUN cd /src && \
+    wget -O /src/ndk.zip 'https://dl.google.com/android/repository/android-ndk-r23b-linux.zip' && \
+    git clone https://github.com/zhaarey/wrapper.git
 RUN cd /src/ && \
     unzip ndk.zip && \
-    git clone https://github.com/zhaarey/wrapper.git && \
     cd /src/wrapper && \
     sed -i 's/~/\/src/g' /src/wrapper/Makefile && \
     sed -i 's/~/\/src/g' /src/wrapper/Makefile 
