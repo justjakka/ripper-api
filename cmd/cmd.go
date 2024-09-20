@@ -84,6 +84,8 @@ func serve(cCtx *cli.Context) error {
 			Msg("Error while shutting down")
 	}
 
+	qsrv.Shutdown()
+
 	return nil
 }
 

@@ -47,5 +47,19 @@ func ProcessLink(c echo.Context) error {
 }
 
 func ProcessRequestID(c echo.Context) error {
-	return c.JSON(http.StatusOK, c.Param("reqid"))
+	cc := c.(*ConfigContext)
+	job := new(JobQuery)
+	if err := c.Bind(job); err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+	if err := c.Validate(job); err != nil {
+		return err
+	}
+	insp := cc.Inspector
+	info, err := insp.GetTaskInfo("default", job.JobId)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	return c.JSON(http.StatusOK, info.State)
 }

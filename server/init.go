@@ -21,12 +21,12 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 	return nil
 }
 
-func createEcho(config *ServerConfig, logger zerolog.Logger, asynqClient *asynq.Client) *echo.Echo {
+func createEcho(config *ServerConfig, logger zerolog.Logger, asynqClient *asynq.Client, asynqInspector *asynq.Inspector) *echo.Echo {
 	e := echo.New()
 
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			cc := &ConfigContext{c, config, asynqClient}
+			cc := &ConfigContext{c, config, asynqClient, asynqInspector}
 			return next(cc)
 		}
 	})
@@ -75,7 +75,7 @@ func createEcho(config *ServerConfig, logger zerolog.Logger, asynqClient *asynq.
 	}))
 
 	e.POST("/", ProcessLink)
-	e.GET("/requestid/:reqid", ProcessRequestID)
+	e.GET("/job/", ProcessRequestID)
 
 	return e
 }
@@ -90,7 +90,13 @@ func CreateEchoWithServer(ctx context.Context, config *ServerConfig) (*echo.Echo
 		DB:       0,
 	})
 
-	e := createEcho(config, logger.With().Logger(), asynqClient)
+	asynqInspector := asynq.NewInspector(&asynq.RedisClientOpt{
+		Addr:     listenAddr,
+		Password: config.RedisPw,
+		DB:       0,
+	})
+
+	e := createEcho(config, logger.With().Logger(), asynqClient, asynqInspector)
 
 	listenAddr = fmt.Sprintf(":%d", config.Port)
 

@@ -20,9 +20,14 @@ type ConfigContext struct {
 	echo.Context
 	*ServerConfig
 	*asynq.Client
+	*asynq.Inspector
 }
 
 type (
+	JobQuery struct {
+		JobId string `json:"jobid" validate:"required"`
+	}
+
 	SubmittedUrl struct {
 		Url string `json:"url" validate:"required"`
 	}
