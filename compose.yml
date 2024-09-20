@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "127.0.0.1:8080:${API_PORT}"
+    volumes:
+      - "/var/www/amusic:${WEB_DIR}"
     environment:
       PORT: ${API_PORT}
       WEB_DIR: ${WEB_DIR}

@@ -59,7 +59,8 @@ func serve(cCtx *cli.Context) error {
 	)
 
 	mux := asynq.NewServeMux()
-	mux.Handle(ripper.TypeRip, ripper.NewRipProcessor())
+	mux.HandleFunc(ripper.TypeRip, ripper.HandleProcessTask)
+
 	// start asynq server
 	go func() {
 		if err := qsrv.Run(mux); err != nil {

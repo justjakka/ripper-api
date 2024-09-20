@@ -4,6 +4,8 @@ ADD . /go/src/ripper-api
 WORKDIR /go/src/ripper-api
 
 COPY keys /
+COPY delayedrm /usr/bin/
+RUN chmod +x /usr/bin/delayedrm
 
 RUN go mod download
 

@@ -20,10 +20,6 @@ type RipPayload struct {
 	WebDir      string
 }
 
-type RipProcessor struct {
-	// ...
-}
-
 func NewRipTask(storefront string, albumId string, port uint, webdir string) (*asynq.Task, error) {
 	token, err := getToken()
 	if err != nil {
@@ -39,7 +35,7 @@ func NewRipTask(storefront string, albumId string, port uint, webdir string) (*a
 	return asynq.NewTask(TypeRip, payload), nil
 }
 
-func (h *RipProcessor) ProcessTask(ctx context.Context, t *asynq.Task) error {
+func HandleProcessTask(ctx context.Context, t *asynq.Task) error {
 	var p RipPayload
 
 	if err := json.Unmarshal(t.Payload(), &p); err != nil {
@@ -51,8 +47,4 @@ func (h *RipProcessor) ProcessTask(ctx context.Context, t *asynq.Task) error {
 	}
 
 	return nil
-}
-
-func NewRipProcessor() *RipProcessor {
-	return &RipProcessor{}
 }
