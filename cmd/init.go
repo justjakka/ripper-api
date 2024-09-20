@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"log"
 	"os"
 	"time"
 
@@ -33,12 +34,13 @@ func initConfig(cCtx *cli.Context) (*server.ServerConfig, error) {
 	}
 
 	return &server.ServerConfig{
-			Port:        cCtx.Uint("port"),
-			PortRedis:   cCtx.Uint("port-redis"),
-			PortWrapper: cCtx.Uint("port-wrapper"),
-			WebDir:      cCtx.String("web-dir"),
-			RedisPw:     cCtx.String("redis-pw"),
-			KeyList:     &lines},
+			Port:         cCtx.Uint("port"),
+			PortRedis:    cCtx.Uint("port-redis"),
+			PortWrapper:  cCtx.Uint("port-wrapper"),
+			WebDir:       cCtx.String("web-dir"),
+			RedisPw:      cCtx.String("redis-pw"),
+			AddressRedis: cCtx.String("redis-address"),
+			KeyList:      &lines},
 		nil
 }
 
@@ -48,6 +50,8 @@ func initLogger() zerolog.Logger {
 		TimeFormat: time.RFC3339,
 	}
 	logger := zerolog.New(output).With().Timestamp().Logger()
+	log.SetFlags(0)
+	log.SetOutput(logger)
 
 	return logger
 }

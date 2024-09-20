@@ -1,0 +1,28 @@
+FROM debian
+
+SHELL [ "/bin/bash", "-o", "pipefail", "-c", "-l" ]
+
+RUN set -x && \
+    apt-get update && \
+    apt-get install -y git wget unzip make clang && \
+    mkdir /src
+RUN wget -O /src/ndk.zip 'https://dl.google.com/android/repository/android-ndk-r23b-linux.zip'
+RUN cd /src/ && \
+    unzip ndk.zip && \
+    git clone https://github.com/zhaarey/wrapper.git && \
+    cd /src/wrapper && \
+    sed -i 's/~/\/src/g' /src/wrapper/Makefile && \
+    sed -i 's/~/\/src/g' /src/wrapper/Makefile 
+RUN cd /src/wrapper && \
+    make && \
+    mv ./wrapper / && \
+    mv ./rootfs / && \
+    mv ./handle.o / && \
+    chmod +x /wrapper && \
+    rm -rf /src
+RUN apt-get remove -y git wget unzip make clang && \
+    apt -y autoremove && \
+    apt-get clean
+
+ENTRYPOINT [ "/bin/bash", "-o", "pipefail", "-c", "-l" ]
+CMD ["/wrapper -H ${WRAPPER_HOST} -D ${WRAPPER_PORT} -L ${AMUSIC_ACCOUNT}"]

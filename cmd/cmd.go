@@ -2,14 +2,17 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	"ripper-api/ripper"
 	"ripper-api/server"
 
+	"github.com/hibiken/asynq"
 	"github.com/urfave/cli/v2"
 )
 
@@ -37,6 +40,32 @@ func serve(cCtx *cli.Context) error {
 			logger.Fatal().
 				AnErr("error", err).
 				Msg("Error starting HTTP listener")
+		}
+	}()
+
+	listenAddr := fmt.Sprintf("%v:%d", cCtx.String("redis-address"), cCtx.Uint("port-redis"))
+	qsrv := asynq.NewServer(
+		asynq.RedisClientOpt{
+			Addr:     listenAddr,
+			Password: cCtx.String("redis-pw"),
+			DB:       0,
+		},
+		asynq.Config{
+			Concurrency: 1,
+			Queues: map[string]int{
+				"default": 3,
+			},
+		},
+	)
+
+	mux := asynq.NewServeMux()
+	mux.HandleFunc(ripper.TypeRip, ripper.HandleRipTask)
+	// start asynq server
+	go func() {
+		if err := qsrv.Run(mux); err != nil {
+			logger.Fatal().
+				AnErr("error", err).
+				Msg("Error starting Asynq server")
 		}
 	}()
 
@@ -106,6 +135,12 @@ func Start() {
 						Usage:   "Redis password",
 						EnvVars: []string{"REDIS_PASSWORD"},
 						Aliases: []string{"pw"},
+					},
+					&cli.StringFlag{
+						Name:    "redis-address",
+						Usage:   "Redis address",
+						EnvVars: []string{"REDIS_ADDRESS"},
+						Aliases: []string{"ad"},
 					},
 				},
 			},

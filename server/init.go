@@ -6,18 +6,27 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/go-playground/validator"
+	"github.com/hibiken/asynq"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 )
 
-func createEcho(config *ServerConfig, logger zerolog.Logger, RedisClient *redis.Client) *echo.Echo {
+func (cv *CustomValidator) Validate(i interface{}) error {
+	if err := cv.validator.Struct(i); err != nil {
+		// Optionally, you could return the error to give each route more control over the status code
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return nil
+}
+
+func createEcho(config *ServerConfig, logger zerolog.Logger, asynqClient *asynq.Client) *echo.Echo {
 	e := echo.New()
 
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			cc := &ConfigContext{c, config, RedisClient}
+			cc := &ConfigContext{c, config, asynqClient}
 			return next(cc)
 		}
 	})
@@ -35,12 +44,12 @@ func createEcho(config *ServerConfig, logger zerolog.Logger, RedisClient *redis.
 					Str("method", v.Method).
 					Msg("request")
 			} else {
-				logger.Info().
+				logger.Error().
 					Str("URI", v.URI).
 					Int("status", v.Status).
 					Str("method", v.Method).
 					Err(v.Error).
-					Msg("error")
+					Msg("request")
 			}
 			return nil
 		},
@@ -50,6 +59,8 @@ func createEcho(config *ServerConfig, logger zerolog.Logger, RedisClient *redis.
 
 	e.Use(middleware.RequestID())
 	e.Use(middleware.Recover())
+
+	e.Validator = &CustomValidator{validator: validator.New()}
 
 	e.Use(middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
 		KeyLookup: "header:api-key",
@@ -63,7 +74,7 @@ func createEcho(config *ServerConfig, logger zerolog.Logger, RedisClient *redis.
 		},
 	}))
 
-	e.POST("/:urlhex", ProcessLink)
+	e.POST("/", ProcessLink)
 	e.GET("/requestid/:reqid", ProcessRequestID)
 
 	return e
@@ -72,14 +83,14 @@ func createEcho(config *ServerConfig, logger zerolog.Logger, RedisClient *redis.
 func CreateEchoWithServer(ctx context.Context, config *ServerConfig) (*echo.Echo, *http.Server) {
 	logger := zerolog.Ctx(ctx)
 
-	listenAddr := fmt.Sprintf("redis:%d", config.PortRedis)
-	rdb := redis.NewClient(&redis.Options{
+	listenAddr := fmt.Sprintf("%v:%d", config.AddressRedis, config.PortRedis)
+	asynqClient := asynq.NewClient(&asynq.RedisClientOpt{
 		Addr:     listenAddr,
 		Password: config.RedisPw,
 		DB:       0,
 	})
 
-	e := createEcho(config, logger.With().Logger(), rdb)
+	e := createEcho(config, logger.With().Logger(), asynqClient)
 
 	listenAddr = fmt.Sprintf(":%d", config.Port)
 

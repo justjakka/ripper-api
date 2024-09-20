@@ -1,64 +1,51 @@
 package server
 
 import (
-	"context"
 	"net/http"
-	"time"
+	"regexp"
+	"ripper-api/ripper"
 
 	"github.com/labstack/echo/v4"
 )
 
-func QueryRedis(c echo.Context, RequestId string) (string, error) {
-
-	ctx := context.Background()
-	cc := c.(*ConfigContext)
-	rdb := cc.Client
-
-	response, err := rdb.Get(ctx, RequestId).Result()
-
-	if err != nil {
-		return "", err
+func checkUrl(url string) (string, string) {
+	pat := regexp.MustCompile(`^(?:https:\/\/(?:beta\.music|music)\.apple\.com\/(\w{2})(?:\/album|\/album\/.+))\/(?:id)?(\d[^\D]+)(?:$|\?)`)
+	matches := pat.FindAllStringSubmatch(url, -1)
+	if matches == nil {
+		return "", ""
+	} else {
+		return matches[0][1], matches[0][2]
 	}
-
-	return response, nil
-}
-
-func RedisSet(c echo.Context, RequestId string, message string) error {
-	ctx := context.Background()
-	cc := c.(*ConfigContext)
-	rdb := cc.Client
-
-	err := rdb.Set(ctx, RequestId, message, time.Hour).Err()
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func ProcessLink(c echo.Context) error {
-
-	err := RedisSet(c, c.Response().Header().Get(echo.HeaderXRequestID), "Job created")
-
-	if err != nil {
+	cc := c.(*ConfigContext)
+	url := new(SubmittedUrl)
+	if err := c.Bind(url); err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+	if err := c.Validate(url); err != nil {
 		return err
 	}
+	storefront, albumId := checkUrl(url.Url)
 
-	return c.JSON(http.StatusOK, c.Response().Header().Get(echo.HeaderXRequestID))
+	if storefront == "" && albumId == "" {
+		return c.JSON(http.StatusBadRequest, "Invalid link")
+	}
+
+	task, err := ripper.NewRipTask(storefront, albumId, cc.ServerConfig.PortWrapper, cc.ServerConfig.WebDir)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	info, err := cc.Client.Enqueue(task)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	return c.JSON(http.StatusOK, info.ID)
 }
 
 func ProcessRequestID(c echo.Context) error {
-	response, err := QueryRedis(c, c.Param("reqid"))
-
-	if err != nil {
-		return err
-	}
-
-	if response == "" {
-		return c.JSON(http.StatusBadRequest, "No response")
-	} else {
-		return c.JSON(http.StatusOK, response)
-	}
-
+	return c.JSON(http.StatusOK, c.Param("reqid"))
 }

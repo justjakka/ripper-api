@@ -1,8 +1,10 @@
 services:
   ripper-api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "127.0.0.1:8080:80"
+      - "127.0.0.1:8080:${API_PORT}"
     environment:
       PORT: ${API_PORT}
       WEB_DIR: ${WEB_DIR}
@@ -10,10 +12,23 @@ services:
       KEY_DB: ${KEY_DB}
       REDIS_PORT: ${REDIS_PORT}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_ADDRESS: ${REDIS_ADDRESS}
     container_name: ripper-api
 
   redis:
     image: redis:latest
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:${REDIS_PORT}"
     container_name: redis-db
+  
+  wrapper:
+    build:
+      dockerfile: Dockerfile-wrapper
+    privileged: true
+    ports:
+      - "127.0.0.1:10200:${WRAPPER_PORT}"
+    environment:
+      WRAPPER_HOST: "0.0.0.0"
+      WRAPPER_PORT: "${WRAPPER_PORT}"
+      AMUSIC_ACCOUNT: "${AMUSIC_ACCOUNT}"
+    container_name: wrapper
