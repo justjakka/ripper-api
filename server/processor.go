@@ -1,8 +1,10 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"regexp"
 	"ripper-api/ripper"
 	"time"
@@ -47,7 +49,7 @@ func ProcessLink(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, info.ID)
+	return c.JSON(http.StatusAccepted, info.ID)
 }
 
 func ProcessRequestID(c echo.Context) error {
@@ -64,9 +66,30 @@ func ProcessRequestID(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
-	if info.State != 6 {
-		return c.JSON(http.StatusOK, info.State)
+
+	if info.State == 1 {
+		return c.JSON(http.StatusProcessing, info.State)
+	} else if info.State == 2 || info.State == 3 {
+		return c.JSON(http.StatusTooEarly, info.State)
+	} else if info.State == 5 || info.State == 4 {
+		return c.JSON(http.StatusInternalServerError, info.LastErr)
+	} else if info.State == 6 {
+		var p ripper.RipPayload
+
+		if err := json.Unmarshal(info.Payload, &p); err != nil {
+			return fmt.Errorf("json.Unmarshal failed: %v: %w", err, asynq.SkipRetry)
+		}
+
+		meta, err := ripper.GetMeta(p.AlbumId, p.Token, p.Storefront)
+
+		if err != nil {
+			return err
+		}
+		zipName := fmt.Sprintf("%s - %s.zip", meta.Data[0].Attributes.ArtistName, meta.Data[0].Attributes.Name)
+		sanZipName := filepath.Join(p.WebDir, ripper.ForbiddenNames.ReplaceAllString(zipName, "_"))
+
+		return c.File(sanZipName)
 	} else {
-		return c.JSON(http.StatusOK, "release downloaded")
+		return c.JSON(http.StatusOK, info.State)
 	}
 }

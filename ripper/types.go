@@ -14,7 +14,7 @@ const (
 )
 
 var (
-	forbiddenNames = regexp.MustCompile(`[/\\<>:"|?*]`)
+	ForbiddenNames = regexp.MustCompile(`[/\\<>:"|?*]`)
 )
 
 type SampleInfo struct {
