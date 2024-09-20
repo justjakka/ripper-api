@@ -59,6 +59,7 @@ func createEcho(config *ServerConfig, logger zerolog.Logger, asynqClient *asynq.
 
 	e.Use(middleware.RequestID())
 	e.Use(middleware.Recover())
+	e.Pre(middleware.AddTrailingSlash())
 
 	e.Validator = &CustomValidator{validator: validator.New()}
 
