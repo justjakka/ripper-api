@@ -127,6 +127,7 @@ func ProcessRequestID(c echo.Context) error {
 
 func SendFile(c echo.Context) error {
 	url := new(SubmittedUrl)
+	cc := c.(*ConfigContext)
 	if err := c.Bind(url); err != nil {
 		msg := &Message{
 			Msg: err.Error(),
@@ -137,5 +138,7 @@ func SendFile(c echo.Context) error {
 		return err
 	}
 
-	return c.File(url.Url)
+	sanZipName := filepath.Join(cc.WebDir, url.Url)
+
+	return c.File(sanZipName)
 }
