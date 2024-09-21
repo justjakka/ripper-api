@@ -110,7 +110,7 @@ func ProcessRequestID(c echo.Context) error {
 			return err
 		}
 		zipName := fmt.Sprintf("%s - %s.zip", meta.Data[0].Attributes.ArtistName, meta.Data[0].Attributes.Name)
-		sanZipName := filepath.Join(p.WebDir, ripper.ForbiddenNames.ReplaceAllString(zipName, "_"))
+		sanZipName := ripper.ForbiddenNames.ReplaceAllString(zipName, "_")
 
 		msg := &Message{
 			Msg: sanZipName,
