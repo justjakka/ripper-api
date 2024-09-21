@@ -76,6 +76,7 @@ func createEcho(config *ServerConfig, logger zerolog.Logger, asynqClient *asynq.
 
 	e.POST("/", ProcessLink)
 	e.GET("/job/", ProcessRequestID)
+	e.GET("/file/", SendFile)
 
 	return e
 }

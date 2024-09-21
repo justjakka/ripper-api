@@ -28,7 +28,10 @@ func ProcessLink(c echo.Context) error {
 	cc := c.(*ConfigContext)
 	url := new(SubmittedUrl)
 	if err := c.Bind(url); err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
+		msg := &Message{
+			Msg: err.Error(),
+		}
+		return c.JSON(http.StatusBadRequest, msg)
 	}
 	if err := c.Validate(url); err != nil {
 		return err
@@ -36,28 +39,41 @@ func ProcessLink(c echo.Context) error {
 	storefront, albumId := checkUrl(url.Url)
 
 	if storefront == "" && albumId == "" {
-		msg := fmt.Sprintf("Invalid link: %v", url.Url)
+		msg := &Message{
+			Msg: fmt.Sprintf("Invalid link: %v", url.Url),
+		}
 		return c.JSON(http.StatusBadRequest, msg)
 	}
 
 	task, err := ripper.NewRipTask(storefront, albumId, cc.ServerConfig.PortWrapper, cc.ServerConfig.WebDir)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
+		msg := &Message{
+			Msg: err.Error(),
+		}
+		return c.JSON(http.StatusBadRequest, msg)
 	}
 
 	info, err := cc.Client.Enqueue(task, asynq.Retention(time.Hour))
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
+		msg := &Message{
+			Msg: err.Error(),
+		}
+		return c.JSON(http.StatusBadRequest, msg)
 	}
-
-	return c.JSON(http.StatusAccepted, info.ID)
+	msg := &Message{
+		Msg: info.ID,
+	}
+	return c.JSON(http.StatusAccepted, msg)
 }
 
 func ProcessRequestID(c echo.Context) error {
 	cc := c.(*ConfigContext)
 	job := new(JobQuery)
 	if err := c.Bind(job); err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
+		msg := &Message{
+			Msg: err.Error(),
+		}
+		return c.JSON(http.StatusBadRequest, msg)
 	}
 	if err := c.Validate(job); err != nil {
 		return err
@@ -65,15 +81,22 @@ func ProcessRequestID(c echo.Context) error {
 	insp := cc.Inspector
 	info, err := insp.GetTaskInfo("default", job.JobId)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
+		msg := &Message{
+			Msg: err.Error(),
+		}
+		return c.JSON(http.StatusBadRequest, msg)
 	}
 
 	if info.State == 1 {
-		return c.JSON(http.StatusProcessing, info.State)
-	} else if info.State == 2 || info.State == 3 {
-		return c.JSON(http.StatusTooEarly, info.State)
-	} else if info.State == 5 || info.State == 4 {
-		return c.JSON(http.StatusInternalServerError, info.LastErr)
+		msg := &Message{
+			Msg: info.State.String(),
+		}
+		return c.JSON(http.StatusProcessing, msg)
+	} else if info.State == 2 || info.State == 3 || info.State == 7 {
+		msg := &Message{
+			Msg: info.State.String(),
+		}
+		return c.JSON(http.StatusTooEarly, msg)
 	} else if info.State == 6 {
 		var p ripper.RipPayload
 
@@ -89,8 +112,30 @@ func ProcessRequestID(c echo.Context) error {
 		zipName := fmt.Sprintf("%s - %s.zip", meta.Data[0].Attributes.ArtistName, meta.Data[0].Attributes.Name)
 		sanZipName := filepath.Join(p.WebDir, ripper.ForbiddenNames.ReplaceAllString(zipName, "_"))
 
-		return c.File(sanZipName)
+		msg := &Message{
+			Msg: sanZipName,
+		}
+
+		return c.JSON(http.StatusOK, msg)
 	} else {
-		return c.JSON(http.StatusOK, info.State)
+		msg := &Message{
+			Msg: info.LastErr,
+		}
+		return c.JSON(http.StatusInternalServerError, msg)
 	}
+}
+
+func SendFile(c echo.Context) error {
+	url := new(SubmittedUrl)
+	if err := c.Bind(url); err != nil {
+		msg := &Message{
+			Msg: err.Error(),
+		}
+		return c.JSON(http.StatusBadRequest, msg)
+	}
+	if err := c.Validate(url); err != nil {
+		return err
+	}
+
+	return c.File(url.Url)
 }

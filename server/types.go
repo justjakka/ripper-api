@@ -36,3 +36,7 @@ type (
 		validator *validator.Validate
 	}
 )
+
+type Message struct {
+	Msg string `json:"message"`
+}
