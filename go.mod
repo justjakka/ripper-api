@@ -1,6 +1,6 @@
 module ripper-api
 
-go 1.19
+go 1.23
 
 require (
 	github.com/abema/go-mp4 v1.2.0

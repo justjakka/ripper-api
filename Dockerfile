@@ -1,4 +1,4 @@
-FROM golang:1.19
+FROM golang:1.23
 
 ADD . /go/src/ripper-api
 WORKDIR /go/src/ripper-api
