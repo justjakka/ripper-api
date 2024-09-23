@@ -39,12 +39,14 @@ func createEcho(config *ServerConfig, logger zerolog.Logger, asynqClient *asynq.
 			if v.Error == nil {
 				logger.Info().
 					Str("URI", v.URI).
+					Str("IP", v.IP).
 					Int("status", v.Status).
 					Str("method", v.Method).
 					Msg("request")
 			} else {
 				logger.Error().
 					Str("URI", v.URI).
+					Str("IP", v.IP).
 					Int("status", v.Status).
 					Str("method", v.Method).
 					Err(v.Error).
