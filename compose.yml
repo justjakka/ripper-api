@@ -16,6 +16,11 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_ADDRESS: ${REDIS_ADDRESS}
     container_name: ripper-api
+    depends_on:
+      redis:
+        condition: service_started
+      wrapper:
+        condition: service_started
 
   redis:
     image: redis:latest
