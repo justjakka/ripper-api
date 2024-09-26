@@ -13,20 +13,20 @@ const (
 )
 
 type RipPayload struct {
-	AlbumId     string
-	Token       string
-	Storefront  string
-	WrapperPort uint
-	WebDir      string
+	AlbumId    string
+	Token      string
+	Storefront string
+	Wrapper    string
+	WebDir     string
 }
 
-func NewRipTask(storefront string, albumId string, port uint, webdir string) (*asynq.Task, error) {
+func NewRipTask(storefront string, albumId string, webdir string, wrapper string) (*asynq.Task, error) {
 	token, err := getToken()
 	if err != nil {
 		return nil, err
 	}
 
-	payload, err := json.Marshal(RipPayload{AlbumId: albumId, Token: token, Storefront: storefront, WrapperPort: port, WebDir: webdir})
+	payload, err := json.Marshal(RipPayload{AlbumId: albumId, Token: token, Storefront: storefront, Wrapper: wrapper, WebDir: webdir})
 
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func HandleProcessTask(ctx context.Context, t *asynq.Task) error {
 		return fmt.Errorf("json.Unmarshal failed: %v: %w", err, asynq.SkipRetry)
 	}
 
-	if err := Rip(p.AlbumId, p.Token, p.Storefront, p.WrapperPort, p.WebDir); err != nil {
+	if err := Rip(p.AlbumId, p.Token, p.Storefront, p.Wrapper, p.WebDir); err != nil {
 		return err
 	}
 

@@ -33,14 +33,15 @@ func initConfig(cCtx *cli.Context) (*server.ServerConfig, error) {
 		return nil, err
 	}
 
+	wrappers := cCtx.StringSlice("wrappers")
+
 	return &server.ServerConfig{
 			Port:         cCtx.Uint("port"),
-			PortRedis:    cCtx.Uint("port-redis"),
-			PortWrapper:  cCtx.Uint("port-wrapper"),
+			Wrappers:     wrappers,
 			WebDir:       cCtx.String("web-dir"),
 			RedisPw:      cCtx.String("redis-pw"),
-			AddressRedis: cCtx.String("redis-address"),
-			KeyList:      &lines},
+			AddressRedis: cCtx.String("redis"),
+			KeyList:      lines},
 		nil
 }
 

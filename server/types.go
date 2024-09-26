@@ -9,11 +9,10 @@ import (
 type ServerConfig struct {
 	Port         uint
 	AddressRedis string
-	PortRedis    uint
-	PortWrapper  uint
+	Wrappers     []string
 	WebDir       string
 	RedisPw      string
-	KeyList      *[]string
+	KeyList      []string
 }
 
 type ConfigContext struct {

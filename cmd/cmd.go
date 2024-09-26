@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 
 	"ripper-api/ripper"
@@ -43,18 +43,23 @@ func serve(cCtx *cli.Context) error {
 		}
 	}()
 
-	listenAddr := fmt.Sprintf("%v:%d", cCtx.String("redis-address"), cCtx.Uint("port-redis"))
+	wrappers := cCtx.StringSlice("wrappers")
+
+	queues := make(map[string]int)
+
+	for i := range wrappers {
+		queues[strconv.Itoa(i)] = 3
+	}
+
 	qsrv := asynq.NewServer(
 		asynq.RedisClientOpt{
-			Addr:     listenAddr,
+			Addr:     cCtx.String("redis"),
 			Password: cCtx.String("redis-pw"),
 			DB:       0,
 		},
 		asynq.Config{
-			Concurrency: 1,
-			Queues: map[string]int{
-				"default": 3,
-			},
+			Concurrency: len(queues),
+			Queues:      queues,
 		},
 	)
 
@@ -109,41 +114,39 @@ func Start() {
 						Aliases: []string{"p"},
 					},
 					&cli.StringFlag{
-						Name:    "web-dir",
-						Usage:   "Temporary directory for content serving",
-						EnvVars: []string{"WEB_DIR"},
-						Aliases: []string{"d"},
+						Name:     "web-dir",
+						Usage:    "Temporary directory for content serving",
+						EnvVars:  []string{"WEB_DIR"},
+						Aliases:  []string{"d"},
+						Required: true,
+					},
+					&cli.StringSliceFlag{
+						Name:     "wrappers",
+						Usage:    "Wrapper addresses and ports",
+						EnvVars:  []string{"WRAPPERS"},
+						Aliases:  []string{"w"},
+						Required: true,
 					},
 					&cli.StringFlag{
-						Name:    "port-wrapper",
-						Usage:   "Port wrapper listens on",
-						EnvVars: []string{"WRAPPER_PORT"},
-						Aliases: []string{"w"},
+						Name:     "key-db",
+						Usage:    "File with valid api keys",
+						EnvVars:  []string{"KEY_DB"},
+						Aliases:  []string{"k"},
+						Required: true,
 					},
 					&cli.StringFlag{
-						Name:    "key-db",
-						Usage:   "File with valid api keys",
-						Value:   "./keys",
-						EnvVars: []string{"KEY_DB"},
-						Aliases: []string{"k"},
-					},
-					&cli.StringFlag{
-						Name:    "port-redis",
-						Usage:   "Port redis listens on",
-						EnvVars: []string{"REDIS_PORT"},
-						Aliases: []string{"r"},
+						Name:     "redis",
+						Usage:    "Address and port of redis",
+						EnvVars:  []string{"REDIS_ADDRESS"},
+						Aliases:  []string{"r"},
+						Required: true,
 					},
 					&cli.StringFlag{
 						Name:    "redis-pw",
-						Usage:   "Redis password",
+						Usage:   "Redis DB password",
+						Value:   "",
 						EnvVars: []string{"REDIS_PASSWORD"},
 						Aliases: []string{"pw"},
-					},
-					&cli.StringFlag{
-						Name:    "redis-address",
-						Usage:   "Redis address",
-						EnvVars: []string{"REDIS_ADDRESS"},
-						Aliases: []string{"ad"},
 					},
 				},
 			},

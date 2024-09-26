@@ -67,7 +67,7 @@ func createEcho(config *ServerConfig, logger zerolog.Logger, asynqClient *asynq.
 	e.Use(middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
 		KeyLookup: "header:api-key",
 		Validator: func(key string, c echo.Context) (bool, error) {
-			for _, line := range *config.KeyList {
+			for _, line := range config.KeyList {
 				if key == line {
 					return true, nil
 				}
@@ -86,22 +86,21 @@ func createEcho(config *ServerConfig, logger zerolog.Logger, asynqClient *asynq.
 func CreateEchoWithServer(ctx context.Context, config *ServerConfig) (*echo.Echo, *http.Server) {
 	logger := zerolog.Ctx(ctx)
 
-	listenAddr := fmt.Sprintf("%v:%d", config.AddressRedis, config.PortRedis)
 	asynqClient := asynq.NewClient(&asynq.RedisClientOpt{
-		Addr:     listenAddr,
+		Addr:     config.AddressRedis,
 		Password: config.RedisPw,
 		DB:       0,
 	})
 
 	asynqInspector := asynq.NewInspector(&asynq.RedisClientOpt{
-		Addr:     listenAddr,
+		Addr:     config.AddressRedis,
 		Password: config.RedisPw,
 		DB:       0,
 	})
 
 	e := createEcho(config, logger.With().Logger(), asynqClient, asynqInspector)
 
-	listenAddr = fmt.Sprintf(":%d", config.Port)
+	listenAddr := fmt.Sprintf(":%d", config.Port)
 
 	srv := &http.Server{
 		Addr:        listenAddr,

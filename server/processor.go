@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"time"
 
 	"ripper-api/ripper"
@@ -13,6 +14,13 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/labstack/echo/v4"
 )
+
+func returnError(err error, c echo.Context) error {
+	msg := &Message{
+		Msg: err.Error(),
+	}
+	return c.JSON(http.StatusInternalServerError, msg)
+}
 
 func checkUrl(url string) (string, string) {
 	pat := regexp.MustCompile(`^(?:https:\/\/(?:beta\.music|music)\.apple\.com\/(\w{2})(?:\/album|\/album\/.+))\/(?:id)?(\d[^\D]+)(?:$|\?)`)
@@ -45,20 +53,38 @@ func ProcessLink(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, msg)
 	}
 
-	task, err := ripper.NewRipTask(storefront, albumId, cc.ServerConfig.PortWrapper, cc.ServerConfig.WebDir)
+	insp := cc.Inspector
+	aval_queues, err := insp.Queues()
+
 	if err != nil {
-		msg := &Message{
-			Msg: err.Error(),
+		return returnError(err, c)
+	}
+
+	min_queue, min := 0, 0
+
+	for _, val := range aval_queues {
+		info, err := insp.GetQueueInfo(val)
+		if err != nil {
+			return returnError(err, c)
 		}
-		return c.JSON(http.StatusBadRequest, msg)
+
+		if info.Active < min {
+			min_queue, err = strconv.Atoi(val)
+			min = info.Active
+			if err != nil {
+				return returnError(err, c)
+			}
+		}
+	}
+
+	task, err := ripper.NewRipTask(storefront, albumId, cc.ServerConfig.WebDir, cc.Wrappers[min_queue])
+	if err != nil {
+		return returnError(err, c)
 	}
 
 	info, err := cc.Client.Enqueue(task, asynq.Retention(time.Hour))
 	if err != nil {
-		msg := &Message{
-			Msg: err.Error(),
-		}
-		return c.JSON(http.StatusBadRequest, msg)
+		return returnError(err, c)
 	}
 	msg := &Message{
 		Msg: info.ID,
@@ -81,10 +107,7 @@ func ProcessRequestID(c echo.Context) error {
 	insp := cc.Inspector
 	info, err := insp.GetTaskInfo("default", job.JobId)
 	if err != nil {
-		msg := &Message{
-			Msg: err.Error(),
-		}
-		return c.JSON(http.StatusBadRequest, msg)
+		return returnError(err, c)
 	}
 
 	if info.State == 1 {
