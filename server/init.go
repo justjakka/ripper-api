@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"ripper-api/ripper"
 
 	"github.com/go-playground/validator"
 	"github.com/hibiken/asynq"
@@ -91,6 +92,19 @@ func CreateEchoWithServer(ctx context.Context, config *ServerConfig) (*echo.Echo
 		Password: config.RedisPw,
 		DB:       0,
 	})
+
+	for i := range len(config.Wrappers) {
+		task, err := ripper.NewInitQueueTask()
+		if err != nil {
+			panic(err)
+		}
+		_, err = asynqClient.Enqueue(task, asynq.Queue(fmt.Sprintf("%v", i)))
+		if err != nil {
+			panic(err)
+		}
+		msg := fmt.Sprintf("Queue %d initialized...", i)
+		logger.Info().Msg(msg)
+	}
 
 	asynqInspector := asynq.NewInspector(&asynq.RedisClientOpt{
 		Addr:     config.AddressRedis,

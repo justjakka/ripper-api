@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"time"
 
 	"ripper-api/ripper"
@@ -54,35 +53,26 @@ func ProcessLink(c echo.Context) error {
 	}
 
 	insp := cc.Inspector
-	aval_queues, err := insp.Queues()
-
-	if err != nil {
-		return returnError(err, c)
-	}
-
-	min_queue, min := 0, 0
-
-	for _, val := range aval_queues {
-		info, err := insp.GetQueueInfo(val)
+	min := 100
+	var queuename int
+	for i := range len(cc.Wrappers) {
+		info, err := insp.GetQueueInfo(fmt.Sprintf("%v", i))
 		if err != nil {
 			return returnError(err, c)
 		}
 
 		if info.Active < min {
-			min_queue, err = strconv.Atoi(val)
+			queuename = i
 			min = info.Active
-			if err != nil {
-				return returnError(err, c)
-			}
 		}
 	}
 
-	task, err := ripper.NewRipTask(storefront, albumId, cc.ServerConfig.WebDir, cc.Wrappers[min_queue])
+	task, err := ripper.NewRipTask(storefront, albumId, cc.ServerConfig.WebDir, cc.Wrappers[queuename])
 	if err != nil {
 		return returnError(err, c)
 	}
 
-	info, err := cc.Client.Enqueue(task, asynq.Retention(time.Hour))
+	info, err := cc.Client.Enqueue(task, asynq.Retention(time.Hour), asynq.Queue(fmt.Sprintf("%v", queuename)))
 	if err != nil {
 		return returnError(err, c)
 	}

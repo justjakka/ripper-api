@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	TypeRip = "download:apple"
+	TypeRip  = "download:apple"
+	TypeInit = "init:queue"
 )
 
 type RipPayload struct {
@@ -35,6 +36,12 @@ func NewRipTask(storefront string, albumId string, webdir string, wrapper string
 	return asynq.NewTask(TypeRip, payload), nil
 }
 
+func NewInitQueueTask() (*asynq.Task, error) {
+	var payload []byte
+
+	return asynq.NewTask(TypeInit, payload), nil
+}
+
 func HandleProcessTask(ctx context.Context, t *asynq.Task) error {
 	var p RipPayload
 
@@ -46,5 +53,9 @@ func HandleProcessTask(ctx context.Context, t *asynq.Task) error {
 		return err
 	}
 
+	return nil
+}
+
+func HandleInitQueueTask(ctx context.Context, t *asynq.Task) error {
 	return nil
 }

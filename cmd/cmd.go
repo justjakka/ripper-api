@@ -48,7 +48,8 @@ func serve(cCtx *cli.Context) error {
 	queues := make(map[string]int)
 
 	for i := range wrappers {
-		queues[strconv.Itoa(i)] = 3
+		queuename := strconv.Itoa(i)
+		queues[queuename] = 3
 	}
 
 	qsrv := asynq.NewServer(
@@ -58,13 +59,14 @@ func serve(cCtx *cli.Context) error {
 			DB:       0,
 		},
 		asynq.Config{
-			Concurrency: len(queues),
+			Concurrency: 2,
 			Queues:      queues,
 		},
 	)
 
 	mux := asynq.NewServeMux()
 	mux.HandleFunc(ripper.TypeRip, ripper.HandleProcessTask)
+	mux.HandleFunc(ripper.TypeInit, ripper.HandleInitQueueTask)
 
 	// start asynq server
 	go func() {
