@@ -10,7 +10,7 @@ services:
     environment:
       PORT: ${API_PORT}
       WEB_DIR: ${WEB_DIR}
-      WRAPPERS: "wrapper:${WRAPPER_PORT} 127.0.0.1:10021"
+      WRAPPERS: "wrapper:${WRAPPER_PORT},127.0.0.1:10021"
       KEY_DB: ${KEY_DB}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_ADDRESS: "${REDIS_ADDRESS}:${REDIS_PORT}"
