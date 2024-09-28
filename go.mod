@@ -3,6 +3,7 @@ module ripper-api
 go 1.23.1
 
 require (
+	github.com/BurntSushi/toml v1.4.0
 	github.com/abema/go-mp4 v1.2.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/grafov/m3u8 v0.12.0
