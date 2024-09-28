@@ -106,7 +106,7 @@ func Start() {
 		UsageText:   "ripper-api [flags]",
 		Commands: []*cli.Command{
 			{Name: "serve",
-				Usage:  "Run the HTTP server",
+				Usage:  "Run the HTTP/asynq server",
 				Action: serve,
 				Flags: []cli.Flag{
 					&cli.UintFlag{
