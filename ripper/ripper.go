@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -1089,14 +1088,6 @@ func Rip(albumId string, token string, storefront string, wrapper string, dir st
 	}
 
 	err = os.RemoveAll(sanAlbumFolder)
-	if err != nil {
-		return err
-	}
-
-	cmd := exec.Command("delayedrm", sanZipName)
-
-	err = cmd.Start()
-
 	if err != nil {
 		return err
 	}
