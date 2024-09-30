@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"time"
 
 	"ripper-api/ripper"
@@ -25,6 +25,37 @@ func serve(cCtx *cli.Context) error {
 
 	logger := initLogger()
 
+	queues := make(map[string]int)
+
+	for i := range len(serverConfig.Wrappers) {
+		queues[fmt.Sprintf("%v", i)] = 3
+	}
+
+	qsrv := asynq.NewServer(
+		asynq.RedisClientOpt{
+			Addr:     serverConfig.AddressRedis,
+			Password: serverConfig.RedisPw,
+			DB:       0,
+		},
+		asynq.Config{
+			Concurrency: len(serverConfig.Wrappers),
+			Queues:      queues,
+		},
+	)
+
+	mux := asynq.NewServeMux()
+	mux.HandleFunc(ripper.TypeRip, ripper.HandleProcessTask)
+	mux.HandleFunc(ripper.TypeInit, ripper.HandleInitQueueTask)
+
+	// start asynq server
+	go func() {
+		if err := qsrv.Run(mux); err != nil {
+			logger.Fatal().
+				AnErr("error", err).
+				Msg("Error starting Asynq server")
+		}
+	}()
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	ctx = logger.WithContext(ctx)
 	defer stop()
@@ -40,40 +71,6 @@ func serve(cCtx *cli.Context) error {
 			logger.Fatal().
 				AnErr("error", err).
 				Msg("Error starting HTTP listener")
-		}
-	}()
-
-	wrappers := cCtx.StringSlice("wrappers")
-
-	queues := make(map[string]int)
-
-	for i := range wrappers {
-		queuename := strconv.Itoa(i)
-		queues[queuename] = 3
-	}
-
-	qsrv := asynq.NewServer(
-		asynq.RedisClientOpt{
-			Addr:     cCtx.String("redis"),
-			Password: cCtx.String("redis-pw"),
-			DB:       0,
-		},
-		asynq.Config{
-			Concurrency: 2,
-			Queues:      queues,
-		},
-	)
-
-	mux := asynq.NewServeMux()
-	mux.HandleFunc(ripper.TypeRip, ripper.HandleProcessTask)
-	mux.HandleFunc(ripper.TypeInit, ripper.HandleInitQueueTask)
-
-	// start asynq server
-	go func() {
-		if err := qsrv.Run(mux); err != nil {
-			logger.Fatal().
-				AnErr("error", err).
-				Msg("Error starting Asynq server")
 		}
 	}()
 

@@ -76,10 +76,7 @@ func ProcessLink(c echo.Context) error {
 	if err != nil {
 		return returnError(err, c)
 	}
-	msg := &Message{
-		Msg: info.ID,
-	}
-	return c.JSON(http.StatusAccepted, msg)
+	return c.JSON(http.StatusAccepted, JobQuery{JobId: info.ID, QueueId: fmt.Sprintf("%v", queuename)})
 }
 
 func ProcessRequestID(c echo.Context) error {
@@ -95,7 +92,7 @@ func ProcessRequestID(c echo.Context) error {
 		return err
 	}
 	insp := cc.Inspector
-	info, err := insp.GetTaskInfo("default", job.JobId)
+	info, err := insp.GetTaskInfo(job.QueueId, job.JobId)
 	if err != nil {
 		return returnError(err, c)
 	}

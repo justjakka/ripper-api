@@ -1093,7 +1093,7 @@ func Rip(albumId string, token string, storefront string, wrapper string, dir st
 		return err
 	}
 
-	cmd := exec.Command("/usr/bin/delayedrm", sanZipName)
+	cmd := exec.Command("delayedrm", sanZipName)
 
 	err = cmd.Start()
 

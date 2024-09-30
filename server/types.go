@@ -24,7 +24,8 @@ type ConfigContext struct {
 
 type (
 	JobQuery struct {
-		JobId string `json:"jobid" validate:"required"`
+		JobId   string `json:"jobid" validate:"required"`
+		QueueId string `json:"queueid" validate:"required"`
 	}
 
 	SubmittedUrl struct {

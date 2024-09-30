@@ -93,6 +93,12 @@ func CreateEchoWithServer(ctx context.Context, config *ServerConfig) (*echo.Echo
 		DB:       0,
 	})
 
+	asynqInspector := asynq.NewInspector(&asynq.RedisClientOpt{
+		Addr:     config.AddressRedis,
+		Password: config.RedisPw,
+		DB:       0,
+	})
+
 	for i := range len(config.Wrappers) {
 		task, err := ripper.NewInitQueueTask()
 		if err != nil {
@@ -104,13 +110,8 @@ func CreateEchoWithServer(ctx context.Context, config *ServerConfig) (*echo.Echo
 		}
 		msg := fmt.Sprintf("Queue %d initialized...", i)
 		logger.Info().Msg(msg)
+		asynqInspector.DeleteAllCompletedTasks(fmt.Sprintf("%v", i))
 	}
-
-	asynqInspector := asynq.NewInspector(&asynq.RedisClientOpt{
-		Addr:     config.AddressRedis,
-		Password: config.RedisPw,
-		DB:       0,
-	})
 
 	e := createEcho(config, logger.With().Logger(), asynqClient, asynqInspector)
 
