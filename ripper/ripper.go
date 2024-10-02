@@ -1004,11 +1004,11 @@ func writeZip(ZipName string, albumFolder string) error {
 	return nil
 }
 
-func Rip(albumId string, token string, storefront string, wrapper string, dir string) error {
+func Rip(albumId string, token string, storefront string, wrapper string, dir string) (string, error) {
 	meta, err := GetMeta(albumId, token, storefront)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	albumFolder := fmt.Sprintf("%s - %s", meta.Data[0].Attributes.ArtistName, meta.Data[0].Attributes.Name)
@@ -1019,11 +1019,11 @@ func Rip(albumId string, token string, storefront string, wrapper string, dir st
 	exists, err := fileExists(sanZipName)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if exists {
-		return nil
+		return sanZipName, nil
 	}
 
 	os.MkdirAll(sanAlbumFolder, os.ModePerm)
@@ -1049,7 +1049,7 @@ func Rip(albumId string, token string, storefront string, wrapper string, dir st
 		exists, err := fileExists(trackPath)
 
 		if err != nil {
-			return err
+			return "", err
 		}
 		if !exists {
 			trackUrl, keys, err := extractMedia(manifest.Attributes.ExtendedAssetUrls.EnhancedHls)
@@ -1084,15 +1084,15 @@ func Rip(albumId string, token string, storefront string, wrapper string, dir st
 	err = writeZip(sanZipName, sanAlbumFolder)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = os.RemoveAll(sanAlbumFolder)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return sanZipName, nil
 }
 
 func extractMedia(b string) (string, []string, error) {

@@ -1,10 +1,8 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"regexp"
 	"time"
 
@@ -33,16 +31,20 @@ func checkUrl(url string) (string, string) {
 
 func ProcessLink(c echo.Context) error {
 	cc := c.(*ConfigContext)
+
 	url := new(SubmittedUrl)
+
 	if err := c.Bind(url); err != nil {
 		msg := &Message{
 			Msg: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, msg)
 	}
+
 	if err := c.Validate(url); err != nil {
 		return err
 	}
+
 	storefront, albumId := checkUrl(url.Url)
 
 	if storefront == "" && albumId == "" {
@@ -76,22 +78,27 @@ func ProcessLink(c echo.Context) error {
 	if err != nil {
 		return returnError(err, c)
 	}
-	return c.JSON(http.StatusAccepted, JobQuery{JobId: info.ID, QueueId: fmt.Sprintf("%v", queuename)})
+	return c.JSON(http.StatusAccepted, JobQuery{JobId: info.ID, QueueId: info.Queue})
 }
 
 func ProcessRequestID(c echo.Context) error {
 	cc := c.(*ConfigContext)
+
 	job := new(JobQuery)
+
 	if err := c.Bind(job); err != nil {
 		msg := &Message{
 			Msg: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, msg)
 	}
+
 	if err := c.Validate(job); err != nil {
 		return err
 	}
+
 	insp := cc.Inspector
+
 	info, err := insp.GetTaskInfo(job.QueueId, job.JobId)
 	if err != nil {
 		return returnError(err, c)
@@ -106,49 +113,13 @@ func ProcessRequestID(c echo.Context) error {
 		msg := &Message{
 			Msg: info.State.String(),
 		}
-		return c.JSON(http.StatusTooEarly, msg)
+		return c.JSON(http.StatusCreated, msg)
 	} else if info.State == 6 {
-		var p ripper.RipPayload
-
-		if err := json.Unmarshal(info.Payload, &p); err != nil {
-			return fmt.Errorf("json.Unmarshal failed: %v: %w", err, asynq.SkipRetry)
-		}
-
-		meta, err := ripper.GetMeta(p.AlbumId, p.Token, p.Storefront)
-
-		if err != nil {
-			return err
-		}
-		zipName := fmt.Sprintf("%s - %s.zip", meta.Data[0].Attributes.ArtistName, meta.Data[0].Attributes.Name)
-		sanZipName := ripper.ForbiddenNames.ReplaceAllString(zipName, "_")
-
-		msg := &Message{
-			Msg: sanZipName,
-		}
-
-		return c.JSON(http.StatusOK, msg)
+		return c.File(string(info.Result))
 	} else {
 		msg := &Message{
 			Msg: info.LastErr,
 		}
 		return c.JSON(http.StatusInternalServerError, msg)
 	}
-}
-
-func SendFile(c echo.Context) error {
-	url := new(SubmittedUrl)
-	cc := c.(*ConfigContext)
-	if err := c.Bind(url); err != nil {
-		msg := &Message{
-			Msg: err.Error(),
-		}
-		return c.JSON(http.StatusBadRequest, msg)
-	}
-	if err := c.Validate(url); err != nil {
-		return err
-	}
-
-	sanZipName := filepath.Join(cc.WebDir, url.Url)
-
-	return c.File(sanZipName)
 }

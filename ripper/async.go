@@ -49,10 +49,17 @@ func HandleProcessTask(ctx context.Context, t *asynq.Task) error {
 		return fmt.Errorf("json.Unmarshal failed: %v: %w", err, asynq.SkipRetry)
 	}
 
-	if err := Rip(p.AlbumId, p.Token, p.Storefront, p.Wrapper, p.WebDir); err != nil {
+	zipname, err := Rip(p.AlbumId, p.Token, p.Storefront, p.Wrapper, p.WebDir)
+	if err != nil {
 		return err
 	}
 
+	res := []byte(zipname)
+
+	_, err = t.ResultWriter().Write(res)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
