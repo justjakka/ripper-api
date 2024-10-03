@@ -105,15 +105,9 @@ func ProcessRequestID(c echo.Context) error {
 	}
 
 	if info.State == 1 {
-		msg := &Message{
-			Msg: info.State.String(),
-		}
-		return c.JSON(http.StatusProcessing, msg)
+		return c.NoContent(http.StatusNoContent)
 	} else if info.State == 2 || info.State == 3 || info.State == 7 {
-		msg := &Message{
-			Msg: info.State.String(),
-		}
-		return c.JSON(http.StatusCreated, msg)
+		return c.NoContent(http.StatusCreated)
 	} else if info.State == 6 {
 		return c.File(string(info.Result))
 	} else {
