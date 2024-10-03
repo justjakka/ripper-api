@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: always
     ports:
       - "127.0.0.1:8080:${API_PORT}"
     volumes:
@@ -23,6 +24,7 @@ services:
 
   redis:
     image: redis:latest
+    restart: always
     ports:
       - "127.0.0.1:6379:${REDIS_PORT}"
     container_name: redis-db
@@ -31,6 +33,7 @@ services:
     build:
       dockerfile: Dockerfile-wrapper
     privileged: true
+    restart: always
     ports:
       - "127.0.0.1:10200:${WRAPPER_PORT}"
     environment:
