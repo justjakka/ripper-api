@@ -3,13 +3,13 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/labstack/echo/v4"
 	"net"
 	"net/http"
 	"ripper-api/ripper"
 
 	"github.com/go-playground/validator"
 	"github.com/hibiken/asynq"
-	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog"
 )
@@ -21,7 +21,7 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 	return nil
 }
 
-func createEcho(config *ServerConfig, logger zerolog.Logger, asynqClient *asynq.Client, asynqInspector *asynq.Inspector) *echo.Echo {
+func createEcho(config *Config, logger zerolog.Logger, asynqClient *asynq.Client, asynqInspector *asynq.Inspector) *echo.Echo {
 	e := echo.New()
 
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -83,7 +83,7 @@ func createEcho(config *ServerConfig, logger zerolog.Logger, asynqClient *asynq.
 	return e
 }
 
-func CreateEchoWithServer(ctx context.Context, config *ServerConfig) (*echo.Echo, *http.Server) {
+func CreateEchoWithServer(ctx context.Context, config *Config) (*echo.Echo, *http.Server) {
 	logger := zerolog.Ctx(ctx)
 
 	asynqClient := asynq.NewClient(&asynq.RedisClientOpt{
@@ -101,15 +101,19 @@ func CreateEchoWithServer(ctx context.Context, config *ServerConfig) (*echo.Echo
 	for i := range len(config.Wrappers) {
 		task, err := ripper.NewInitQueueTask()
 		if err != nil {
-			panic(err)
+			logger.Error().Err(err).Msg(err.Error())
 		}
 		_, err = asynqClient.Enqueue(task, asynq.Queue(fmt.Sprintf("%v", i)))
 		if err != nil {
-			panic(err)
+			logger.Error().Err(err).Msg(err.Error())
 		}
 		msg := fmt.Sprintf("Queue %d initialized...", i)
 		logger.Info().Msg(msg)
-		asynqInspector.DeleteAllCompletedTasks(fmt.Sprintf("%v", i))
+		_, err = asynqInspector.DeleteAllCompletedTasks(fmt.Sprintf("%v", i))
+		if err != nil {
+			logger.Error().Err(err).Msg(err.Error())
+			return nil, nil
+		}
 	}
 
 	e := createEcho(config, logger.With().Logger(), asynqClient, asynqInspector)

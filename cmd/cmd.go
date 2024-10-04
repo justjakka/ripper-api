@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -67,7 +68,7 @@ func serve(cCtx *cli.Context) error {
 
 	// start the http server
 	go func() {
-		if err := e.StartServer(srv); err != nil && err != http.ErrServerClosed {
+		if err := e.StartServer(srv); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Fatal().
 				AnErr("error", err).
 				Msg("Error starting HTTP listener")

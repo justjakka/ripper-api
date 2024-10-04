@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"bufio"
+	"fmt"
+	"github.com/urfave/cli/v2"
 	"log"
 	"os"
 	"time"
@@ -10,7 +12,6 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/rs/zerolog"
-	"github.com/urfave/cli/v2"
 )
 
 type Config struct {
@@ -27,7 +28,12 @@ func readLines(path string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			fmt.Println("Failed to close file")
+		}
+	}(file)
 
 	var lines []string
 	scanner := bufio.NewScanner(file)
@@ -37,7 +43,7 @@ func readLines(path string) ([]string, error) {
 	return lines, scanner.Err()
 }
 
-func initConfig(cCtx *cli.Context) (*server.ServerConfig, error) {
+func initConfig(cCtx *cli.Context) (*server.Config, error) {
 	var conf Config
 	if cCtx.Path("config") != "" {
 		if _, err := toml.DecodeFile(cCtx.Path("config"), &conf); err != nil {
@@ -48,7 +54,7 @@ func initConfig(cCtx *cli.Context) (*server.ServerConfig, error) {
 			return nil, err
 		}
 
-		return &server.ServerConfig{
+		return &server.Config{
 				Port:         conf.Port,
 				Wrappers:     conf.Wrappers,
 				WebDir:       conf.WebDir,
@@ -64,7 +70,7 @@ func initConfig(cCtx *cli.Context) (*server.ServerConfig, error) {
 
 		wrappers := cCtx.StringSlice("wrappers")
 
-		return &server.ServerConfig{
+		return &server.Config{
 				Port:         cCtx.Uint("port"),
 				Wrappers:     wrappers,
 				WebDir:       cCtx.String("web-dir"),

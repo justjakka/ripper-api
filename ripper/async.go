@@ -42,19 +42,19 @@ func NewInitQueueTask() (*asynq.Task, error) {
 	return asynq.NewTask(TypeInit, payload), nil
 }
 
-func HandleProcessTask(ctx context.Context, t *asynq.Task) error {
+func HandleProcessTask(_ context.Context, t *asynq.Task) error {
 	var p RipPayload
 
 	if err := json.Unmarshal(t.Payload(), &p); err != nil {
 		return fmt.Errorf("json.Unmarshal failed: %v: %w", err, asynq.SkipRetry)
 	}
 
-	zipname, err := Rip(p.AlbumId, p.Token, p.Storefront, p.Wrapper, p.WebDir)
+	Zipname, err := Rip(p.AlbumId, p.Token, p.Storefront, p.Wrapper, p.WebDir)
 	if err != nil {
 		return err
 	}
 
-	res := []byte(zipname)
+	res := []byte(Zipname)
 
 	_, err = t.ResultWriter().Write(res)
 	if err != nil {
@@ -63,6 +63,6 @@ func HandleProcessTask(ctx context.Context, t *asynq.Task) error {
 	return nil
 }
 
-func HandleInitQueueTask(ctx context.Context, t *asynq.Task) error {
+func HandleInitQueueTask(_ context.Context, _ *asynq.Task) error {
 	return nil
 }

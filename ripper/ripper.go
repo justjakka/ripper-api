@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/abema/go-mp4"
 	"io"
 	"io/fs"
 	"math"
@@ -19,7 +20,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/abema/go-mp4"
 	"github.com/grafov/m3u8"
 )
 
@@ -1063,6 +1063,7 @@ func Rip(albumId string, token string, storefront string, wrapper string, dir st
 			}
 
 			samplesOk := true
+			//goland:noinspection GoDfaConstantCondition
 			for samplesOk {
 				for _, i := range info.samples {
 					if int(i.descIndex) >= len(keys) {

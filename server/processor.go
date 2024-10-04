@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/labstack/echo/v4"
 	"net/http"
 	"regexp"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"ripper-api/ripper"
 
 	"github.com/hibiken/asynq"
-	"github.com/labstack/echo/v4"
 )
 
 func returnError(err error, c echo.Context) error {
@@ -20,7 +20,7 @@ func returnError(err error, c echo.Context) error {
 }
 
 func checkUrl(url string) (string, string) {
-	pat := regexp.MustCompile(`^(?:https:\/\/(?:beta\.music|music)\.apple\.com\/(\w{2})(?:\/album|\/album\/.+))\/(?:id)?(\d[^\D]+)(?:$|\?)`)
+	pat := regexp.MustCompile(`^https://(?:beta\.music|music)\.apple\.com/(\w{2})(?:/album|/album/.+)/(?:id)?(\d+)(?:$|\?)`)
 	matches := pat.FindAllStringSubmatch(url, -1)
 	if matches == nil {
 		return "", ""
@@ -55,7 +55,7 @@ func ProcessLink(c echo.Context) error {
 	}
 
 	insp := cc.Inspector
-	min := 100
+	minTasks := 100
 	var queuename int
 	for i := range len(cc.Wrappers) {
 		info, err := insp.GetQueueInfo(fmt.Sprintf("%v", i))
@@ -63,13 +63,13 @@ func ProcessLink(c echo.Context) error {
 			return returnError(err, c)
 		}
 
-		if info.Active < min {
+		if info.Active < minTasks {
 			queuename = i
-			min = info.Active
+			minTasks = info.Active
 		}
 	}
 
-	task, err := ripper.NewRipTask(storefront, albumId, cc.ServerConfig.WebDir, cc.Wrappers[queuename])
+	task, err := ripper.NewRipTask(storefront, albumId, cc.Config.WebDir, cc.Wrappers[queuename])
 	if err != nil {
 		return returnError(err, c)
 	}

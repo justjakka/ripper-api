@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type ServerConfig struct {
+type Config struct {
 	Port         uint
 	AddressRedis string
 	Wrappers     []string
@@ -17,7 +17,7 @@ type ServerConfig struct {
 
 type ConfigContext struct {
 	echo.Context
-	*ServerConfig
+	*Config
 	*asynq.Client
 	*asynq.Inspector
 }
