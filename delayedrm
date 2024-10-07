@@ -1,4 +1,0 @@
-#!/bin/sh
-
-sleep 1h
-rm -rf "$1"
