@@ -19,8 +19,11 @@ import (
 
 func serve(cCtx *cli.Context) error {
 	serverConfig, err := initConfig(cCtx)
-
 	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(serverConfig.WebDir, os.ModePerm)
+	if err != nil && os.IsNotExist(err) {
 		return err
 	}
 
@@ -47,6 +50,7 @@ func serve(cCtx *cli.Context) error {
 	mux := asynq.NewServeMux()
 	mux.HandleFunc(ripper.TypeRip, ripper.HandleProcessTask)
 	mux.HandleFunc(ripper.TypeInit, ripper.HandleInitQueueTask)
+	mux.HandleFunc(ripper.TypeDelete, ripper.HandleDeleteTask)
 
 	// start asynq server
 	go func() {
@@ -89,9 +93,17 @@ func serve(cCtx *cli.Context) error {
 			AnErr("error", err).
 			Msg("Error while shutting down")
 	}
-
 	qsrv.Stop()
 	qsrv.Shutdown()
+	logger.Info().Msg("Removing everything from web folder")
+	err = os.RemoveAll(serverConfig.WebDir)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(serverConfig.WebDir, os.ModePerm)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

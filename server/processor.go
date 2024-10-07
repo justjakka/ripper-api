@@ -1,9 +1,15 @@
 package server
 
 import (
+	"archive/zip"
+	"bytes"
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"io"
+	"io/fs"
 	"net/http"
+	"os"
+	"path/filepath"
 	"regexp"
 	"time"
 
@@ -11,6 +17,55 @@ import (
 
 	"github.com/hibiken/asynq"
 )
+
+func createZipBuffer(albumFolder string) (*bytes.Buffer, error) {
+	buf := new(bytes.Buffer)
+
+	archiveWriter := zip.NewWriter(buf)
+
+	defer func(archiveWriter *zip.Writer) {
+		_ = archiveWriter.Close()
+	}(archiveWriter)
+
+	err := filepath.WalkDir(albumFolder, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+
+		f, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+
+		defer func(f *os.File) {
+			_ = f.Close()
+		}(f)
+
+		filePath := filepath.Base(path)
+
+		w, err := archiveWriter.Create(filePath)
+		if err != nil {
+			return err
+		}
+
+		_, err = io.Copy(w, f)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return buf, nil
+}
 
 func returnError(err error, c echo.Context) error {
 	msg := &Message{
@@ -109,7 +164,26 @@ func ProcessRequestID(c echo.Context) error {
 	} else if info.State == 2 || info.State == 3 || info.State == 7 {
 		return c.NoContent(http.StatusCreated)
 	} else if info.State == 6 {
-		return c.File(string(info.Result))
+		buf, err := createZipBuffer(string(info.Result))
+		if err != nil {
+			msg := &Message{
+				Msg: err.Error(),
+			}
+			return c.JSON(http.StatusInternalServerError, msg)
+		}
+		zipReader := io.Reader(buf)
+
+		task, err := ripper.NewDeleteTask(string(info.Result))
+		if err != nil {
+			return returnError(err, c)
+		}
+
+		_, err = cc.Client.Enqueue(task, asynq.Queue(info.Queue), asynq.ProcessIn(time.Hour))
+		if err != nil {
+			return returnError(err, c)
+		}
+
+		return c.Stream(http.StatusOK, "application/zip", zipReader)
 	} else {
 		msg := &Message{
 			Msg: info.LastErr,

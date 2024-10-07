@@ -66,7 +66,7 @@ func createEcho(config *Config, logger zerolog.Logger, asynqClient *asynq.Client
 	e.Validator = &CustomValidator{validator: validator.New()}
 
 	e.Use(middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
-		KeyLookup: "header:api-key",
+		KeyLookup: "header:Api-Key",
 		Validator: func(key string, c echo.Context) (bool, error) {
 			for _, line := range config.KeyList {
 				if key == line {

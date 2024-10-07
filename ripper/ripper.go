@@ -1,7 +1,6 @@
 package ripper
 
 import (
-	"archive/zip"
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
@@ -9,7 +8,6 @@ import (
 	"fmt"
 	"github.com/abema/go-mp4"
 	"io"
-	"io/fs"
 	"math"
 	"net"
 	"net/http"
@@ -962,64 +960,6 @@ func writeCover(sanAlbumFolder, url string) error {
 	return nil
 }
 
-func writeZip(ZipName string, albumFolder string) error {
-	archive, err := os.Create(ZipName)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func(archive *os.File) {
-		_ = archive.Close()
-	}(archive)
-
-	archiveWriter := zip.NewWriter(archive)
-
-	defer func(archiveWriter *zip.Writer) {
-		_ = archiveWriter.Close()
-	}(archiveWriter)
-
-	err = filepath.WalkDir(albumFolder, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if d.IsDir() {
-			return nil
-		}
-
-		f, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-
-		defer func(f *os.File) {
-			_ = f.Close()
-		}(f)
-
-		zipPath := strings.Replace(path, albumFolder, "", 1)
-		zipPath = strings.TrimPrefix(zipPath, string(filepath.Separator))
-		zipPath = filepath.ToSlash(zipPath)
-
-		w, err := archiveWriter.Create(zipPath)
-		if err != nil {
-			return err
-		}
-
-		_, err = io.Copy(w, f)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func Rip(albumId string, token string, storefront string, wrapper string, dir string) (string, error) {
 	meta, err := GetMeta(albumId, token, storefront)
 
@@ -1028,19 +968,7 @@ func Rip(albumId string, token string, storefront string, wrapper string, dir st
 	}
 
 	albumFolder := fmt.Sprintf("%s - %s", meta.Data[0].Attributes.ArtistName, meta.Data[0].Attributes.Name)
-	zipName := fmt.Sprintf("%s - %s.zip", meta.Data[0].Attributes.ArtistName, meta.Data[0].Attributes.Name)
 	sanAlbumFolder := filepath.Join(dir, ForbiddenNames.ReplaceAllString(albumFolder, "_"))
-	sanZipName := filepath.Join(dir, ForbiddenNames.ReplaceAllString(zipName, "_"))
-
-	exists, err := fileExists(sanZipName)
-
-	if err != nil {
-		return "", err
-	}
-
-	if exists {
-		return sanZipName, nil
-	}
 
 	err = os.MkdirAll(sanAlbumFolder, os.ModePerm)
 	if err != nil {
@@ -1101,18 +1029,7 @@ func Rip(albumId string, token string, storefront string, wrapper string, dir st
 		}
 	}
 
-	err = writeZip(sanZipName, sanAlbumFolder)
-
-	if err != nil {
-		return "", err
-	}
-
-	err = os.RemoveAll(sanAlbumFolder)
-	if err != nil {
-		return "", err
-	}
-
-	return sanZipName, nil
+	return sanAlbumFolder, nil
 }
 
 func extractMedia(b string) (string, []string, error) {

@@ -4,13 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/hibiken/asynq"
 )
 
 const (
-	TypeRip  = "download:apple"
-	TypeInit = "init:queue"
+	TypeRip    = "download:apple"
+	TypeInit   = "init:queue"
+	TypeDelete = "remove:task"
 )
 
 type RipPayload struct {
@@ -19,6 +21,10 @@ type RipPayload struct {
 	Storefront string
 	Wrapper    string
 	WebDir     string
+}
+
+type DeletePayload struct {
+	FolderPath string
 }
 
 func NewRipTask(storefront string, albumId string, webdir string, wrapper string) (*asynq.Task, error) {
@@ -42,6 +48,16 @@ func NewInitQueueTask() (*asynq.Task, error) {
 	return asynq.NewTask(TypeInit, payload), nil
 }
 
+func NewDeleteTask(dir string) (*asynq.Task, error) {
+	payload, err := json.Marshal(DeletePayload{FolderPath: dir})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return asynq.NewTask(TypeDelete, payload), nil
+}
+
 func HandleProcessTask(_ context.Context, t *asynq.Task) error {
 	var p RipPayload
 
@@ -49,12 +65,12 @@ func HandleProcessTask(_ context.Context, t *asynq.Task) error {
 		return fmt.Errorf("json.Unmarshal failed: %v: %w", err, asynq.SkipRetry)
 	}
 
-	Zipname, err := Rip(p.AlbumId, p.Token, p.Storefront, p.Wrapper, p.WebDir)
+	folder, err := Rip(p.AlbumId, p.Token, p.Storefront, p.Wrapper, p.WebDir)
 	if err != nil {
 		return err
 	}
 
-	res := []byte(Zipname)
+	res := []byte(folder)
 
 	_, err = t.ResultWriter().Write(res)
 	if err != nil {
@@ -64,5 +80,19 @@ func HandleProcessTask(_ context.Context, t *asynq.Task) error {
 }
 
 func HandleInitQueueTask(_ context.Context, _ *asynq.Task) error {
+	return nil
+}
+
+func HandleDeleteTask(_ context.Context, t *asynq.Task) error {
+	var p DeletePayload
+
+	if err := json.Unmarshal(t.Payload(), &p); err != nil {
+		return fmt.Errorf("json.Unmarshal failed: %v: %w", err, asynq.SkipRetry)
+	}
+
+	err := os.RemoveAll(p.FolderPath)
+	if err != nil {
+		return err
+	}
 	return nil
 }
