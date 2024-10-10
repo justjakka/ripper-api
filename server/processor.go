@@ -185,7 +185,6 @@ func ProcessRequestID(c echo.Context) error {
 		}
 
 		c.Response().Header().Set(echo.HeaderContentLength, strconv.Itoa(buf.Len()))
-		c.Response().Flush()
 
 		return c.Stream(http.StatusOK, "application/zip", zipReader)
 	} else {
