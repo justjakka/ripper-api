@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"time"
 
 	"ripper-api/ripper"
@@ -183,9 +182,6 @@ func ProcessRequestID(c echo.Context) error {
 		if err != nil {
 			return returnError(err, c)
 		}
-
-		c.Response().Header().Set(echo.HeaderContentLength, strconv.Itoa(buf.Len()))
-		c.Response().Flush()
 
 		return c.Stream(http.StatusOK, "application/zip", zipReader)
 	} else {
