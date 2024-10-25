@@ -968,7 +968,7 @@ func Rip(albumId string, token string, storefront string, wrapper string, dir st
 	}
 
 	albumFolder := fmt.Sprintf("%s - %s", meta.Data[0].Attributes.ArtistName, meta.Data[0].Attributes.Name)
-	sanAlbumFolder := filepath.Join(dir, ForbiddenNames.ReplaceAllString(albumFolder, "_"))
+	sanAlbumFolder := filepath.Join(dir, ForbiddenNames.ReplaceAllString(albumFolder, ""))
 
 	err = os.MkdirAll(sanAlbumFolder, os.ModePerm)
 	if err != nil {
@@ -989,7 +989,7 @@ func Rip(albumId string, token string, storefront string, wrapper string, dir st
 			continue
 		}
 
-		filename := fmt.Sprintf("%02d. %s.m4a", trackNum, ForbiddenNames.ReplaceAllString(track.Attributes.Name, "_"))
+		filename := fmt.Sprintf("%02d. %s.m4a", trackNum, ForbiddenNames.ReplaceAllString(track.Attributes.Name, ""))
 
 		trackPath := filepath.Join(sanAlbumFolder, filename)
 
