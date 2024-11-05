@@ -16,6 +16,7 @@ import (
 
 type Config struct {
 	Port         uint     `toml:"Port"`
+	Address	     string   `toml:"Address"`
 	AddressRedis string   `toml:"Redis"`
 	Wrappers     []string `toml:"Wrappers"`
 	WebDir       string   `toml:"Webdir"`
@@ -56,6 +57,7 @@ func initConfig(cCtx *cli.Context) (*server.Config, error) {
 
 		return &server.Config{
 				Port:         conf.Port,
+				Address:      conf.Address,
 				Wrappers:     conf.Wrappers,
 				WebDir:       conf.WebDir,
 				RedisPw:      conf.RedisPw,
@@ -72,6 +74,7 @@ func initConfig(cCtx *cli.Context) (*server.Config, error) {
 
 		return &server.Config{
 				Port:         cCtx.Uint("port"),
+				Address:      cCtx.String("address"),
 				Wrappers:     wrappers,
 				WebDir:       cCtx.String("web-dir"),
 				RedisPw:      cCtx.String("redis-pw"),

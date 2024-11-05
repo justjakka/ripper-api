@@ -118,7 +118,7 @@ func CreateEchoWithServer(ctx context.Context, config *Config) (*echo.Echo, *htt
 
 	e := createEcho(config, logger.With().Logger(), asynqClient, asynqInspector)
 
-	listenAddr := fmt.Sprintf(":%d", config.Port)
+	listenAddr := fmt.Sprintf("%s:%d", config.Address, config.Port)
 
 	srv := &http.Server{
 		Addr:        listenAddr,

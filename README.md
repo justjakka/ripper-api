@@ -14,6 +14,7 @@ USAGE:
 
 OPTIONS:
    --port value, -p value                                     Port to bind the HTTP listener to (default: 8080) [$PORT]
+   --address value, -a value                                  Address to bind the HTTP listener to [$ADDRESS]
    --web-dir value, -d value                                  Temporary directory for content serving [$WEB_DIR]
    --wrappers value, -w value [ --wrappers value, -w value ]  Wrapper addresses and ports [$WRAPPERS]
    --key-db value, -k value                                   File with valid api keys [$KEY_DB]
@@ -25,6 +26,7 @@ OPTIONS:
 ### Config file example (in TOML format):
 ```
 Port = 8100
+Address = 127.0.0.1
 Redis = "127.0.0.1:6379"
 Wrappers = [ "127.0.0.1:10200" ]
 Webdir = "/web"

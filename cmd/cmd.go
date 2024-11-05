@@ -127,6 +127,13 @@ func Start() {
 						Aliases: []string{"p"},
 					},
 					&cli.StringFlag{
+						Name:	 "address",
+						Usage:	 "Address to bind the HTTP listener to",
+						Value:	 string,
+						EnvVars: []string{"ADDRESS"},
+						Aliases: []string{"a"},
+					},
+					&cli.StringFlag{
 						Name:    "web-dir",
 						Usage:   "Temporary directory for content serving",
 						EnvVars: []string{"WEB_DIR"},
