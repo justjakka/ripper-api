@@ -8,6 +8,7 @@ import (
 
 type Config struct {
 	Port         uint
+	Address      string
 	AddressRedis string
 	Wrappers     []string
 	WebDir       string

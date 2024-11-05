@@ -14,13 +14,14 @@ USAGE:
 
 OPTIONS:
    --port value, -p value                                     Port to bind the HTTP listener to (default: 8080) [$PORT]
-   --address value, -a value                                  Address to bind the HTTP listener to [$ADDRESS]
+   --address value, -a value                                  Address to bind the HTTP listener to (default: "127.0.0.1") [$ADDRESS]
    --web-dir value, -d value                                  Temporary directory for content serving [$WEB_DIR]
    --wrappers value, -w value [ --wrappers value, -w value ]  Wrapper addresses and ports [$WRAPPERS]
    --key-db value, -k value                                   File with valid api keys [$KEY_DB]
    --redis value, -r value                                    Address and port of redis [$REDIS_ADDRESS]
    --redis-pw value, --pw value                               Redis DB password [$REDIS_PASSWORD]
    --config value, -c value                                   Path for config file [$RIPPER_CONFIG]
+   --help, -h                                                 show help
 ```
 
 ### Config file example (in TOML format):

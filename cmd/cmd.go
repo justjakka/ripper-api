@@ -129,7 +129,7 @@ func Start() {
 					&cli.StringFlag{
 						Name:	 "address",
 						Usage:	 "Address to bind the HTTP listener to",
-						Value:	 string,
+						Value:	 string("127.0.0.1"),
 						EnvVars: []string{"ADDRESS"},
 						Aliases: []string{"a"},
 					},
