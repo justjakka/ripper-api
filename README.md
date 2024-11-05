@@ -26,7 +26,7 @@ OPTIONS:
 ### Config file example (in TOML format):
 ```
 Port = 8100
-Address = 127.0.0.1
+Address = "127.0.0.1"
 Redis = "127.0.0.1:6379"
 Wrappers = [ "127.0.0.1:10200" ]
 Webdir = "/web"
