@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"time"
+	"net"
 
 	"ripper-api/ripper"
 
@@ -159,38 +160,55 @@ func ProcessRequestID(c echo.Context) error {
 	if err != nil {
 		return returnError(err, c)
 	}
+	
+	switch info.State {
+		case 1:
+			return c.NoContent(http.StatusNoContent)
 
-	if info.State == 1 {
-		return c.NoContent(http.StatusNoContent)
-	} else if info.State == 2 || info.State == 3 || info.State == 7 {
-		return c.NoContent(http.StatusCreated)
-	} else if info.State == 6 {
-		buf, err := createZipBuffer(string(info.Result))
-		if err != nil {
+		case 2, 3, 7:
+			return c.NoContent(http.StatusCreated)
+
+		case 6:
+			buf, err := createZipBuffer(string(info.Result))
+			if err != nil {
+				msg := &Message{
+					Msg: err.Error(),
+				}
+				return c.JSON(http.StatusInternalServerError, msg)
+			}
+			zipReader := io.Reader(buf)
+
+			task, err := ripper.NewDeleteTask(string(info.Result))
+			if err != nil {
+				return returnError(err, c)
+			}
+
+			_, err = cc.Client.Enqueue(task, asynq.Queue(info.Queue), asynq.ProcessIn(time.Hour))
+			if err != nil {
+				return returnError(err, c)
+			}
+
+			c.Response().Header().Set(echo.HeaderContentLength, strconv.Itoa(buf.Len()))
+		
+			return StreamConnWrapper(c, http.StatusOK, "application/zip", zipReader)
+
+		default:
 			msg := &Message{
-				Msg: err.Error(),
+				Msg: info.LastErr,
 			}
 			return c.JSON(http.StatusInternalServerError, msg)
-		}
-		zipReader := io.Reader(buf)
-
-		task, err := ripper.NewDeleteTask(string(info.Result))
-		if err != nil {
-			return returnError(err, c)
-		}
-
-		_, err = cc.Client.Enqueue(task, asynq.Queue(info.Queue), asynq.ProcessIn(time.Hour))
-		if err != nil {
-			return returnError(err, c)
-		}
-
-		c.Response().Header().Set(echo.HeaderContentLength, strconv.Itoa(buf.Len()))
-
-		return c.Stream(http.StatusOK, "application/zip", zipReader)
-	} else {
-		msg := &Message{
-			Msg: info.LastErr,
-		}
-		return c.JSON(http.StatusInternalServerError, msg)
 	}
 }
+
+func StreamConnWrapper(c echo.Context, status int, contentType string, r io.Reader) error {
+    err := c.Stream(status, contentType, r)
+    if err != nil {
+        opErr, ok := err.(*net.OpError)
+        if ok && opErr.Op == "write" && opErr.Err.Error() == "connection reset by peer" {
+            return nil
+        }
+        c.Logger().Errorf("streaming error: %w", err)
+    }
+    return nil
+}
+
