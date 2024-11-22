@@ -2,73 +2,20 @@ package server
 
 import (
 	"archive/zip"
-	"bytes"
 	"errors"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"io"
-	"io/fs"
 	"net"
 	"net/http"
 	"os"
-	"path/filepath"
 	"regexp"
-	"strconv"
 	"time"
 
 	"ripper-api/ripper"
 
 	"github.com/hibiken/asynq"
 )
-
-func createZipBuffer(albumFolder string) (*bytes.Buffer, error) {
-	buf := new(bytes.Buffer)
-
-	archiveWriter := zip.NewWriter(buf)
-
-	defer func(archiveWriter *zip.Writer) {
-		_ = archiveWriter.Close()
-	}(archiveWriter)
-
-	err := filepath.WalkDir(albumFolder, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if d.IsDir() {
-			return nil
-		}
-
-		f, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-
-		defer func(f *os.File) {
-			_ = f.Close()
-		}(f)
-
-		filePath := filepath.Base(path)
-
-		w, err := archiveWriter.Create(filePath)
-		if err != nil {
-			return err
-		}
-
-		_, err = io.Copy(w, f)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return buf, nil
-}
 
 func returnError(err error, c echo.Context) error {
 	msg := &Message{
@@ -118,6 +65,7 @@ func ProcessLink(c echo.Context) error {
 	for i := range len(cc.Wrappers) {
 		info, err := insp.GetQueueInfo(fmt.Sprintf("%v", i))
 		if err != nil {
+			c.Logger().Errorf("failed to get queue info: %v", err)
 			return returnError(err, c)
 		}
 
@@ -129,11 +77,13 @@ func ProcessLink(c echo.Context) error {
 
 	task, err := ripper.NewRipTask(storefront, albumId, cc.Config.WebDir, cc.Wrappers[queuename])
 	if err != nil {
+		c.Logger().Errorf("failed to create new rip task: %v", err)
 		return returnError(err, c)
 	}
 
 	info, err := cc.Client.Enqueue(task, asynq.Retention(time.Hour), asynq.Queue(fmt.Sprintf("%v", queuename)))
 	if err != nil {
+		c.Logger().Errorf("failed to enqueue task: %v", err)
 		return returnError(err, c)
 	}
 	return c.JSON(http.StatusAccepted, JobQuery{JobId: info.ID, QueueId: info.Queue})
@@ -159,6 +109,7 @@ func ProcessRequestID(c echo.Context) error {
 
 	info, err := insp.GetTaskInfo(job.QueueId, job.JobId)
 	if err != nil {
+		c.Logger().Errorf("failed to get task info: %v", err)
 		return returnError(err, c)
 	}
 
@@ -170,34 +121,40 @@ func ProcessRequestID(c echo.Context) error {
 		return c.NoContent(http.StatusCreated)
 
 	case 6:
-		buf, err := createZipBuffer(string(info.Result))
-		if err != nil {
-			msg := &Message{
-				Msg: err.Error(),
-			}
-			return c.JSON(http.StatusInternalServerError, msg)
-		}
-		zipReader := io.Reader(buf)
-
 		task, err := ripper.NewDeleteTask(string(info.Result))
 		if err != nil {
+			c.Logger().Errorf("failed to create new delete task: %v", err)
 			return returnError(err, c)
 		}
 
 		_, err = cc.Client.Enqueue(task, asynq.Queue(info.Queue), asynq.ProcessIn(time.Hour))
 		if err != nil {
+			c.Logger().Errorf("failed to enqueue delete task: %v", err)
 			return returnError(err, c)
 		}
 
-		c.Response().Header().Set(echo.HeaderContentLength, strconv.Itoa(buf.Len()))
+		pr, pw := io.Pipe()
+		go func() {
+			zipWriter := zip.NewWriter(pw)
 
-		return StreamConnWrapper(c, http.StatusOK, "application/zip", zipReader)
+			if err := zipWriter.AddFS(os.DirFS(string(info.Result))); err != nil {
+				c.Logger().Errorf("error on writing zip: %v", err)
+			}
+
+			if err := zipWriter.Close(); err != nil {
+				c.Logger().Errorf("error on closing zip writer: %v", err)
+			}
+
+			if err := pw.Close(); err != nil {
+				c.Logger().Errorf("error on closing zip writer: %v", err)
+			}
+		}()
+
+		return StreamConnWrapper(c, http.StatusOK, "application/zip", pr)
 
 	default:
-		msg := &Message{
-			Msg: info.LastErr,
-		}
-		return c.JSON(http.StatusInternalServerError, msg)
+		c.Logger().Errorf("error: %v", err)
+		return returnError(err, c)
 	}
 }
 
@@ -209,7 +166,7 @@ func StreamConnWrapper(c echo.Context, status int, contentType string, r io.Read
 		if ok && opErr.Op == "write" && opErr.Err.Error() == "connection reset by peer" {
 			return nil
 		}
-		c.Logger().Errorf("streaming error: %w", err)
+		c.Logger().Errorf("streaming error: %v", err)
 	}
 	return nil
 }
