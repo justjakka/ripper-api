@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"io"
+	"io/fs"
 	"net"
 	"net/http"
 	"os"
@@ -16,6 +17,48 @@ import (
 
 	"github.com/hibiken/asynq"
 )
+
+func writeZip(path fs.FS, oWriter io.Writer) error {
+	zipWriter := zip.NewWriter(oWriter)
+	defer zipWriter.Close()
+
+	err := fs.WalkDir(path, ".", func(name string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+		if !info.Mode().IsRegular() {
+			return errors.New("zip: cannot add non-regular file")
+		}
+		h, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+		h.Name = name
+		h.Method = zip.Store
+		fw, err := zipWriter.CreateHeader(h)
+		if err != nil {
+			return err
+		}
+		f, err := path.Open(name)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		_, err = io.Copy(fw, f)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func returnError(err error, c echo.Context) error {
 	msg := &Message{
@@ -135,14 +178,8 @@ func ProcessRequestID(c echo.Context) error {
 
 		pr, pw := io.Pipe()
 		go func() {
-			zipWriter := zip.NewWriter(pw)
-
-			if err := zipWriter.AddFS(os.DirFS(string(info.Result))); err != nil {
+			if err := writeZip(os.DirFS(string(info.Result)), pw); err != nil {
 				c.Logger().Errorf("error on writing zip: %v", err)
-			}
-
-			if err := zipWriter.Close(); err != nil {
-				c.Logger().Errorf("error on closing zip writer: %v", err)
 			}
 
 			if err := pw.Close(); err != nil {
