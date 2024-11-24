@@ -2,6 +2,7 @@ package server
 
 import (
 	"archive/zip"
+	"compress/flate"
 	"errors"
 	"fmt"
 	"github.com/labstack/echo/v4"
@@ -22,6 +23,10 @@ func writeZip(path fs.FS, oWriter io.Writer) error {
 	zipWriter := zip.NewWriter(oWriter)
 	defer zipWriter.Close()
 
+	zipWriter.RegisterCompressor(zip.Deflate, func(out io.Writer) (io.WriteCloser, error) {
+		return flate.NewWriter(out, flate.BestCompression)
+	})
+
 	err := fs.WalkDir(path, ".", func(name string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -41,7 +46,8 @@ func writeZip(path fs.FS, oWriter io.Writer) error {
 			return err
 		}
 		h.Name = name
-		h.Method = zip.Store
+		h.Method = zip.Deflate
+
 		fw, err := zipWriter.CreateHeader(h)
 		if err != nil {
 			return err

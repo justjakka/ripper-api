@@ -16,7 +16,7 @@ import (
 
 type Config struct {
 	Port         uint     `toml:"Port"`
-	Address	     string   `toml:"Address"`
+	Address      string   `toml:"Address"`
 	AddressRedis string   `toml:"Redis"`
 	Wrappers     []string `toml:"Wrappers"`
 	WebDir       string   `toml:"Webdir"`
