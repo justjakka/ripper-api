@@ -1,13 +1,10 @@
-FROM golang:1.23
+FROM golang:1.23.4-alpine
 
-ADD . /go/src/ripper-api
-WORKDIR /go/src/ripper-api
+WORKDIR /usr/src/ripper-api
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
 
-COPY keys /
-COPY config.toml /
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -v -o /usr/bin/ripper-api
 
-RUN go mod download
-
-RUN CGO_ENABLED=0 GOOS=linux go build -o /ripper-api
-
-CMD ["/ripper-api", "serve"]
+CMD ["ripper-api"]

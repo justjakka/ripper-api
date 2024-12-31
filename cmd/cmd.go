@@ -78,34 +78,34 @@ func serve(cCtx *cli.Context) error {
 				Msg("Error starting HTTP listener")
 		}
 	}()
+	select {
+	case <-ctx.Done():
+		logger.Info().Msg("Attempting graceful shutdown, Ctrl+C to force")
 
-	<-ctx.Done()
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx = logger.WithContext(ctx)
+		defer cancel()
 
-	logger.Info().Msg("Attempting graceful shutdown, Ctrl+C to force")
+		// trigger echo graceful shutdown
+		if err := e.Shutdown(ctx); err != nil {
+			logger.Fatal().
+				AnErr("error", err).
+				Msg("Error while shutting down")
+		}
+		qsrv.Stop()
+		qsrv.Shutdown()
+		logger.Info().Msg("Removing everything from web folder")
+		err = os.RemoveAll(serverConfig.WebDir)
+		if err != nil {
+			return err
+		}
+		err = os.MkdirAll(serverConfig.WebDir, os.ModePerm)
+		if err != nil {
+			return err
+		}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	ctx = logger.WithContext(ctx)
-	defer cancel()
-
-	// trigger echo graceful shutdown
-	if err := e.Shutdown(ctx); err != nil {
-		logger.Fatal().
-			AnErr("error", err).
-			Msg("Error while shutting down")
+		return nil
 	}
-	qsrv.Stop()
-	qsrv.Shutdown()
-	logger.Info().Msg("Removing everything from web folder")
-	err = os.RemoveAll(serverConfig.WebDir)
-	if err != nil {
-		return err
-	}
-	err = os.MkdirAll(serverConfig.WebDir, os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func Start() {
