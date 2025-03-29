@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/abema/go-mp4"
 	"io"
 	"math"
 	"net"
@@ -17,6 +16,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/abema/go-mp4"
 
 	"github.com/grafov/m3u8"
 )

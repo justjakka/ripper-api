@@ -3,10 +3,12 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/labstack/echo/v4"
 	"net"
 	"net/http"
-	"ripper-api/ripper"
+
+	"github.com/justjakka/ripper-api/ripper"
+
+	"github.com/labstack/echo/v4"
 
 	"github.com/go-playground/validator"
 	"github.com/hibiken/asynq"

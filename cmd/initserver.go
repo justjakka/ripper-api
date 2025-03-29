@@ -1,14 +1,15 @@
-package cmd
+package main
 
 import (
 	"bufio"
 	"fmt"
-	"github.com/urfave/cli/v2"
 	"log"
 	"os"
 	"time"
 
-	"ripper-api/server"
+	"github.com/urfave/cli/v2"
+
+	"github.com/justjakka/ripper-api/server"
 
 	"github.com/BurntSushi/toml"
 	"github.com/rs/zerolog"

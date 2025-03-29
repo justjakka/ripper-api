@@ -5,7 +5,6 @@ import (
 	"compress/flate"
 	"errors"
 	"fmt"
-	"github.com/labstack/echo/v4"
 	"io"
 	"io/fs"
 	"net"
@@ -14,7 +13,9 @@ import (
 	"regexp"
 	"time"
 
-	"ripper-api/ripper"
+	"github.com/labstack/echo/v4"
+
+	"github.com/justjakka/ripper-api/ripper"
 
 	"github.com/hibiken/asynq"
 )

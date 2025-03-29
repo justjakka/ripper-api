@@ -1,10 +1,11 @@
 package ripper
 
 import (
-	"github.com/abema/go-mp4"
 	"io"
 	"regexp"
 	"time"
+
+	"github.com/abema/go-mp4"
 )
 
 const (
