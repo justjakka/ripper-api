@@ -1,0 +1,8 @@
+[package]
+name = "ripper-api"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+alac = "0.5.0"
+tokio = "1.45.0"
